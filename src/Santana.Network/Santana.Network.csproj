@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+    <Configurations>OldIDs_Debug;NewIDs_Debug;NewIDs_Release;OldIDs_Release;Latest_Debug;Latest_Release;LatestOld_Debug;LatestOld_Release</Configurations>
+    <AssemblyVersion>2026.7.7.0</AssemblyVersion>
+    <FileVersion>2026.7.7.0</FileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NewIDs_Debug|AnyCPU'">
+    <DefineConstants>TRACE;NEWIDS_DEBUG;NETSTANDARD2_0;NEWIDS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Latest_Debug|AnyCPU'">
+    <DefineConstants>TRACE;LATESTS4;NEWIDS;LATEST_DEBUG;NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OldIDs_Debug|AnyCPU'">
+    <DefineConstants>TRACE;OLDIDS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OldIDs_Release|AnyCPU'">
+    <DefineConstants>TRACE;OLDIDS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NewIDs_Release|AnyCPU'">
+    <DefineConstants>TRACE;NEWIDS_RELEASE;NETSTANDARD2_0;NEWIDS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Latest_Release|AnyCPU'">
+    <DefineConstants>TRACE;LATEST_RELEASE;NETSTANDARD2_0;NEWIDS;LATESTS4</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LatestOld_Debug|AnyCPU'">
+    <DefineConstants>TRACE;LATESTOLD_DEBUG;NETSTANDARD2_0;NEWIDS;LATESTS4;OLDUI</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LatestOld_Release|AnyCPU'">
+    <DefineConstants>TRACE;LATESTOLD_RELEASE;NETSTANDARD2_0;NEWIDS;LATESTS4;OLDUI</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+	<ProjectReference Include="..\SantanaLib\SantanaLib.csproj" />
+	<ProjectReference Include="..\SantanaLib.Serialization\SantanaLib.Serialization.csproj" />
+	<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Santana\Santana.csproj" />
+    <ProjectReference Include="..\ProudNetSrc\ProudNetSrc.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="SharpLzo">
+      <HintPath>..\..\libs\SharpLzo.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="liblzo.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="miniLzo_x64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="miniLzo_x86.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

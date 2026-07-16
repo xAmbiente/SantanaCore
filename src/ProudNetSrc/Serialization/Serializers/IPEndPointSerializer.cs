@@ -1,0 +1,33 @@
+using System;
+using System.IO;
+using System.Net;
+using SantanaLib.IO;
+using SantanaLib.Reflection;
+using SantanaLib.Serialization;
+using Sigil;
+using Sigil.NonGeneric;
+
+namespace ProudNetSrc.Serialization.Serializers
+{
+  public class IPEndPointSerializer : ISerializerCompiler
+  {
+    public bool CanHandle(Type type)
+    {
+      throw new NotImplementedException();
+    }
+
+    public void EmitDeserialize(Emit emiter, Local value)
+    {
+      emiter.LoadArgument(1);
+      emiter.Call(ReflectionHelper.GetMethod((BinaryReader x) => x.ReadIPEndPoint()));
+      emiter.StoreLocal(value);
+    }
+
+    public void EmitSerialize(Emit emiter, Local value)
+    {
+      emiter.LoadArgument(1);
+      emiter.LoadLocal(value);
+      emiter.Call(ReflectionHelper.GetMethod((BinaryWriter x) => x.Write(default(IPEndPoint))));
+    }
+  }
+}

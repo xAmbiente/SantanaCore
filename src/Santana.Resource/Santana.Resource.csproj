@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+    <AssemblyVersion>2026.7.7.0</AssemblyVersion>
+    <FileVersion>2026.7.7.0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SantanaLib\SantanaLib.csproj" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.2" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="SharpLzo">
+      <HintPath>..\..\libs\SharpLzo.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+        <RootNamespace>Santana.Relay</RootNamespace>
+        <Configurations>OldIDs_Debug;NewIDs_Debug;NewIDs_Release;OldIDs_Release;Latest_Debug;Latest_Release;LatestOld_Release;LatestOld_Debug</Configurations>
+        <Version>1.0.0</Version>
+        <AssemblyVersion>2026.7.7.0</AssemblyVersion>
+        <FileVersion>2026.7.7.0</FileVersion>
+        <StartupObject>Santana.Relay.Program</StartupObject>
+        <PlatformTarget>x64</PlatformTarget>
+        <AssemblyName>RelayServer</AssemblyName>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='LatestOld_Release'">
+        <DefineConstants>TRACE;LATESTS4;NEWIDS;OLDUI</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='LatestOld_Debug'">
+        <DefineConstants>TRACE;LATESTS4;NEWIDS;OLDUI;DEBUG</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Latest_Release'">
+        <DefineConstants>TRACE;LATESTS4;NEWIDS</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Hjson" Version="3.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Serilog" Version="2.12.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Santana.Network\Santana.Network.csproj" />
+        <ProjectReference Include="..\Santana\Santana.csproj" />
+        <ProjectReference Include="..\ProudNetSrc\ProudNetSrc.csproj" />
+    </ItemGroup>
+</Project>

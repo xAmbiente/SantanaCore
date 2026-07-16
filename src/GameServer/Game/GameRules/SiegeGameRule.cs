@@ -1,0 +1,526 @@
+namespace Santana.Game.GameRules
+{
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using SantanaLib.Threading.Tasks;
+    using MySqlConnector;
+    using Santana;
+    using Santana.Network;
+    using Santana.Network.Data.GameRule;
+    using Santana.Network.Message.Chat;
+    using Santana.Network.Message.Game;
+    using Santana.Network.Message.GameRule;
+    using static System.Collections.Specialized.BitVector32;
+    internal class SiegeBaseDto
+    {
+        public Team Owner = Team.Neutral;
+        public Player Capturer = null;
+        public List<Player> PlayerCloser = new List<Player>();
+        public List<ulong> Drops = new List<ulong>();
+        public Player PlayerWhoCapturedForUpKeep = null;
+    }
+    internal class SiegeItemDto
+    {
+        public ulong Item { get; set; }
+        public ushort Base { get; set; }
+    }
+    internal class SiegeGameRule : GameRuleBase
+    {
+        public SiegeGameRule(Room room)
+            : base(room)
+        {
+            Briefing = new SiegeBriefing(this);
+            StateMachine.Configure(GameRuleState.Waiting)
+                .PermitIf(GameRuleStateTrigger.StartPrepare, GameRuleState.Preparing, CanStartGame);
+            StateMachine.Configure(GameRuleState.Preparing)
+                .Permit(GameRuleStateTrigger.StartGame, GameRuleState.FullGame);
+            StateMachine.Configure(GameRuleState.FullGame)
+                .SubstateOf(GameRuleState.Playing)
+                .Permit(GameRuleStateTrigger.StartResult, GameRuleState.EnteringResult);
+            StateMachine.Configure(GameRuleState.EnteringResult)
+                .SubstateOf(GameRuleState.Playing)
+                .Permit(GameRuleStateTrigger.StartResult, GameRuleState.Result);
+            StateMachine.Configure(GameRuleState.Result)
+                .SubstateOf(GameRuleState.Playing)
+                .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting);
+        }
+        private readonly SiegeBaseDto _siteAlpha = new SiegeBaseDto();
+        private readonly SiegeBaseDto _siteBeta = new SiegeBaseDto();
+        private readonly SiegeBaseDto _siteGamma = new SiegeBaseDto();
+        private List<SiegeBaseDto> _sites;
+        private readonly List<SiegeItemDto> _pendingItems = new List<SiegeItemDto>();
+        private readonly List<ulong> _liveDrops = new List<ulong>();
+        public TaskLoop _worker;
+        private uint _captureFlag;
+        private uint _assistScore;
+        private uint _captureScore;
+        private uint _upkeepSeconds = 240;
+        public override GameRule GameRule => GameRule.Siege;
+        public override Briefing Briefing { get; }
+        public override bool CountMatch => true;
+        public SiegeBriefing GetBriefing()
+        {
+            return (SiegeBriefing)Briefing;
+        }
+        public override void Initialize()
+        {
+            var perTeamPlayers = (uint)Room.Options.PlayerLimit / 2;
+            var perTeamSpectators = (uint)Room.Options.SpectatorLimit / 2;
+            Room.TeamManager.Add(Team.Alpha, perTeamPlayers, perTeamSpectators);
+            Room.TeamManager.Add(Team.Beta, perTeamPlayers, perTeamSpectators);
+            _sites = new List<SiegeBaseDto> { _siteAlpha, _siteBeta, _siteGamma };
+            _worker = new TaskLoop(TimeSpan.FromSeconds(_upkeepSeconds), Worker);
+            base.Initialize();
+        }
+        public override void Cleanup()
+        {
+            if (_worker != null)
+                _worker.Stop();
+            Room.TeamManager.Remove(Team.Alpha);
+            Room.TeamManager.Remove(Team.Beta);
+            base.Cleanup();
+        }
+        public override void Reload()
+        {
+            _siteAlpha.Owner = Team.Neutral;
+            _siteBeta.Owner = Team.Neutral;
+            _siteGamma.Owner = Team.Neutral;
+            _siteAlpha.Capturer = null;
+            _siteBeta.Capturer = null;
+            _siteGamma.Capturer = null;
+            _siteAlpha.PlayerWhoCapturedForUpKeep = null;
+            _siteBeta.PlayerWhoCapturedForUpKeep = null;
+            _siteGamma.PlayerWhoCapturedForUpKeep = null;
+            _pendingItems.Clear();
+            _upkeepSeconds = 60;
+        }
+        public bool ValidPlayer(Player plr)
+        {
+            if (plr == null)
+                return false;
+            if (plr.Room != Room)
+                return false;
+            if (!plr.RoomInfo.HasLoaded)
+                return false;
+            return true;
+        }
+        public override void Update(TimeSpan delta)
+        {
+            base.Update(delta);
+            var teamMgr = Room.TeamManager;
+            try
+            {
+                if (Room.GameState == GameState.Playing &&
+                    !StateMachine.IsInState(GameRuleState.EnteringResult) &&
+                    !StateMachine.IsInState(GameRuleState.Result) &&
+                    RoundTime >= TimeSpan.FromSeconds(5))
+                {
+                    var lowestHeadcount = teamMgr.Values.Min(team =>
+                        team.Keys.Count(plr => plr.RoomInfo.HasLoaded));
+                    var limit = TimeSpan.FromMilliseconds(Room.Options.TimeLimit.TotalMilliseconds);
+                    if (RoundTime >= limit)
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    if (lowestHeadcount == 0 && !Room.Options.IsFriendly)
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    if (Room.Options.IsFriendly && Room.GameState == GameState.Playing &&
+                        teamMgr.NoSpectatorPlayers.Count() == 0)
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    if (teamMgr.PlayersPlaying.Any(plr => plr.RoomInfo.Stats.TotalScore >= Room.Options.ScoreLimit))
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    if (teamMgr.Values.Any(team => team.Score >= Room.Options.ScoreLimit))
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    if (Room.GameState == GameState.Playing && !_worker.IsRunning)
+                        _worker.Start();
+                    if (Room.GameState == GameState.Result && _worker.IsRunning)
+                        _worker.Stop();
+                }
+            }
+            catch (Exception e)
+            {
+                Room.Logger.Error(e.ToString());
+            }
+        }
+        private List<ulong> ItemsGenerate(ushort Base)
+        {
+            var generated = new List<ulong>();
+            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0x5003, new Random().Next(1000, 50000), Base), 16));
+            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0xC8002, new Random().Next(1000, 50000), Base), 16));
+            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0x5004, new Random().Next(1000, 50000), Base), 16));
+            return generated;
+        }
+        public void SpawnPickups(ushort _base, int count = 1)
+        {
+            var batch = new List<ulong>();
+            for (uint i = 0; i < count; i++)
+            {
+                ulong drop = ItemsGenerate(_base).ShuffleSecure().ToArray()[0];
+                batch.Add(drop);
+                _liveDrops.Add(drop);
+            }
+            Room.Broadcast(new SeizeDropBuffItemAckMessage
+            {
+                Pickups = batch.ToArray()
+            });
+        }
+        public void OnPickup(Player plr, ulong pickup, GameSession session)
+        {
+            if (!_liveDrops.Contains(pickup))
+                return;
+            Room.Broadcast(new SeizeBuffItemGainAckMessage
+            {
+                PlayerID = plr.Account.Id,
+                PickupID = pickup
+            });
+            _liveDrops.Remove(pickup);
+            GetRecord(plr).ObtainedItems++;
+            plr.stats.GetSiegeStats().ItemObtainScore++;
+            if (pickup.ToString().StartsWith("34365"))
+                plr.PEN += 5;
+            plr.Session.Player.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, session.Player.Account.Id, "System",
+        $"You have Earned 5 PEN"));
+            if (pickup.ToString().StartsWith("34367"))
+                plr.TotalExperience += 5;
+            plr.Session.Player.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, session.Player.Account.Id, "System",
+                    $"You have Earned 5 Exp"));
+            plr.Session.SendAsync(new MoneyRefreshCashInfoAckMessage(plr.PEN, plr.AP));
+        }
+        private async Task Worker(TimeSpan delta)
+        {
+            if (RoundTime.Seconds < 15)
+                return;
+            ushort siteId = 1;
+            foreach (var site in _sites)
+            {
+                if (site.Owner != Team.Neutral)
+                {
+                    SpawnPickups(siteId);
+                    ulong flag = Convert.ToUInt64(string.Format("{0:X2}{1:X2}", 0x100B0000, siteId), 16);
+                    Room.Broadcast(new SeizeBuffItemGainAckMessage
+                    {
+                        PlayerID = site.PlayerWhoCapturedForUpKeep.Account.Id,
+                        PickupID = flag
+                    });
+                    site.PlayerWhoCapturedForUpKeep.RoomInfo.Team.Score++;
+                    GetRecord(site.PlayerWhoCapturedForUpKeep).CapturePoints++;
+                    site.PlayerWhoCapturedForUpKeep.stats.GetSiegeStats().CaptureScore++;
+                }
+                siteId++;
+            }
+        }
+        public async void OnCapture(Player plr, uint _base, byte isCapture, uint distance)
+        {
+            var site = _sites[(int)_base - 1];
+            if (isCapture == 1 && distance == 0)
+            {
+                if (site.Owner == plr.RoomInfo.Team.Team)
+                    return;
+                if (site.Capturer == null)
+                {
+                    site.Capturer = plr;
+                    if (site.Owner == Team.Neutral)
+                    {
+                        for (uint pct = 3000; pct <= 30000; pct += 3000)
+                        {
+                            if (site.Capturer == null)
+                                return;
+                            if (plr.RoomInfo.Team == null)
+                            {
+                                site.Capturer = null;
+                                var leftInfo = new List<SeizeUpdateInfoDto>
+                                      {
+                                          new SeizeUpdateInfoDto
+                                          {
+                                              Base = (ushort)_base,
+                                              IsCaptured = 0,
+                                              CurrentCaptureTeam = (byte)Team.Neutral,
+                                              BaseOwner = (byte)Team.Neutral,
+                                              Percentage = 0,
+                                          }
+                                      };
+                                Room.Broadcast(new SeizeUpdateInfoAckMessage { Infos = leftInfo.ToArray() });
+                                return;
+                            }
+                            _captureFlag = (uint)Team.Neutral;
+                            _captureScore = 0;
+                            _assistScore = 0;
+                            site.PlayerWhoCapturedForUpKeep = null;
+                            ulong[] assistIds = Array.Empty<ulong>();
+                            if (!site.PlayerCloser.Contains(plr))
+                                site.PlayerCloser.Add(plr);
+                            if (pct == 30000)
+                            {
+                                site.Capturer = null;
+                                site.PlayerWhoCapturedForUpKeep = plr;
+                                _captureScore = 5;
+                                _assistScore = 0;
+                                _captureFlag = (uint)plr.RoomInfo.Team.Team;
+                                site.Owner = plr.RoomInfo.Team.Team;
+                                SpawnPickups((ushort)_base, 5);
+                                GetRecord(plr).CapturePoints += 5;
+                                plr.stats.GetSiegeStats().CaptureScore += 5;
+                                plr.RoomInfo.Team.Score += 5;
+                                assistIds = site.PlayerCloser.Where(p => p.RoomInfo.Team.Team == site.PlayerWhoCapturedForUpKeep.RoomInfo.Team.Team).
+                                   Select(x => x.Account.Id).ToArray();
+                            }
+                            var updateInfo = new List<SeizeUpdateInfoDto>
+                                  {
+                                      new SeizeUpdateInfoDto
+                                      {
+                                          Base = (ushort)_base,
+                                          IsCaptured = _captureFlag,
+                                          CurrentCaptureTeam = (byte)plr.RoomInfo.Team.Team,
+                                          BaseOwner = (byte)plr.RoomInfo.Team.Team,
+                                          Percentage = (ushort)pct,
+                                          PercentageGoal = 30000,
+                                          CapturePoints = _captureScore,
+                                          AssistPoints = _assistScore,
+                                          Player = plr.Account.Id,
+                                          Assists = assistIds,
+                                          Points = (ushort)_captureScore
+                                      }
+                            };
+                            Room.Broadcast(new SeizeUpdateInfoAckMessage { Infos = updateInfo.ToArray() });
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                        }
+                    }
+                    else
+                    {
+                        for (int pct = -30000; pct <= 30000; pct += 3000)
+                        {
+                            if (site.Capturer == null)
+                                return;
+                            if (plr.RoomInfo.Team == null)
+                            {
+                                site.Capturer = null;
+                                var leftInfo = new List<SeizeUpdateInfoDto>
+                                      {
+                                          new SeizeUpdateInfoDto
+                                          {
+                                              BaseOwner = (byte)site.Owner,
+                                              Base = (ushort)_base,
+                                              IsCaptured = (uint)site.Owner,
+                                              CurrentCaptureTeam = (byte)Team.Neutral,
+                                              Percentage = 30000,
+                                          }
+                                      };
+                                Room.Broadcast(new SeizeUpdateInfoAckMessage { Infos = leftInfo.ToArray() });
+                                return;
+                            }
+                            _captureFlag = (uint)Team.Neutral;
+                            _captureScore = 0;
+                            _assistScore = 0;
+                            site.PlayerWhoCapturedForUpKeep = null;
+                            ulong[] assistIds = Array.Empty<ulong>();
+                            if (!site.PlayerCloser.Contains(plr))
+                                site.PlayerCloser.Add(plr);
+                            if (pct == 30000)
+                            {
+                                site.Capturer = null;
+                                site.PlayerWhoCapturedForUpKeep = plr;
+                                _captureScore = 5;
+                                _assistScore = 0;
+                                _captureFlag = (uint)plr.RoomInfo.Team.Team;
+                                site.Owner = plr.RoomInfo.Team.Team;
+                                SpawnPickups((ushort)_base, 5);
+                                GetRecord(plr).CapturePoints += 5;
+                                plr.stats.GetSiegeStats().CaptureScore += 5;
+                                plr.RoomInfo.Team.Score += 5;
+                                assistIds = site.PlayerCloser.Where(p => p.RoomInfo.Team.Team == site.PlayerWhoCapturedForUpKeep.RoomInfo.Team.Team).
+                                   Select(x => x.Account.Id).ToArray();
+                            }
+                            var updateInfo = new List<SeizeUpdateInfoDto>
+                                  {
+                                      new SeizeUpdateInfoDto
+                                      {
+                                          Base = (ushort)_base,
+                                          IsCaptured = _captureFlag,
+                                          CurrentCaptureTeam = pct < 0 ? (byte)site.Owner : (byte) plr.RoomInfo.Team.Team,
+                                          BaseOwner = pct < 0 ? (byte)site.Owner : (byte) plr.RoomInfo.Team.Team,
+                                          Percentage = (ushort)pct,
+                                          PercentageGoal = 30000,
+                                          CapturePoints = _captureScore,
+                                          AssistPoints = _assistScore,
+                                          Player = plr.Account.Id,
+                                          Assists = assistIds,
+                                          Points = (ushort)_captureScore
+                                      }
+                            };
+                            Room.Broadcast(new SeizeUpdateInfoAckMessage { Infos = updateInfo.ToArray() });
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                        }
+                    }
+                }
+            }
+            else if (isCapture == 0 && distance == 0)
+            {
+                if (site.Capturer == plr)
+                {
+                    site.PlayerCloser.RemoveAll(p => p == site.Capturer);
+                    site.Capturer = null;
+                    _captureScore = 0;
+                    _assistScore = 0;
+                    site.PlayerWhoCapturedForUpKeep = null;
+                    var releaseInfo = new List<SeizeUpdateInfoDto>
+                          {
+                              new SeizeUpdateInfoDto
+                              {
+                                  Base = (ushort)_base,
+                                  IsCaptured = site.Owner == Team.Neutral ? 3 : (uint)site.Owner,
+                                  CurrentCaptureTeam = (byte)Team.Neutral,
+                                  BaseOwner = (byte)site.Owner
+                              }
+                          };
+                    Room.Broadcast(new SeizeUpdateInfoAckMessage { Infos = releaseInfo.ToArray() });
+                    return;
+                }
+            }
+        }
+        public override PlayerRecord GetPlayerRecord(Player plr)
+        {
+            return new SiegePlayerRecord(plr);
+        }
+        private static SiegePlayerRecord GetRecord(Player plr)
+        {
+            return (SiegePlayerRecord)plr.RoomInfo.Stats;
+        }
+        public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute,
+            LongPeerId scoreTarget, LongPeerId scoreKiller, LongPeerId scoreAssist)
+        {
+            base.OnScoreKill(killer, assist, target, attackAttribute, scoreTarget, scoreKiller, scoreAssist);
+            if (!ScoreIsPlaying())
+                return;
+            if (scoreTarget.PeerId.Category == PlayerCategory.Player)
+            {
+                var targetTeam = target?.RoomInfo?.Team;
+                if (targetTeam != null)
+                {
+                    var killerTeam = killer?.RoomInfo?.Team;
+                    if (killerTeam != null)
+                    {
+                        GetRecord(killer).Kills++;
+                        killer.stats.GetSiegeStats().BattleScore += 2;
+                        if (assist != null)
+                        {
+                            GetRecord(assist).KillAssists++;
+                            assist.stats.GetSiegeStats().BattleScore++;
+                        }
+                    }
+                    GetRecord(target).Deaths++;
+                }
+                else if (targetTeam != null)
+                {
+                    GetRecord(killer).Kills++;
+                    killer.stats.GetSiegeStats().BattleScore += 2;
+                    if (assist != null)
+                    {
+                        GetRecord(assist).KillAssists++;
+                        assist.stats.GetSiegeStats().BattleScore++;
+                    }
+                }
+            }
+        }
+        public override void OnScoreSuicide(Player target, LongPeerId scoreTarget, AttackAttribute icon)
+        {
+            base.OnScoreSuicide(target, scoreTarget, icon);
+            if (!ScoreIsPlaying())
+                return;
+            if (scoreTarget.PeerId.Category == PlayerCategory.Player)
+            {
+                var targetTeam = target?.RoomInfo?.Team;
+                if (targetTeam != null)
+                {
+                    GetPlayerRecord(target).Suicides++;
+                }
+            }
+        }
+        private bool CanStartGame()
+        {
+            if (!StateMachine.IsInState(GameRuleState.Waiting))
+                return false;
+            if (Room.Options.IsFriendly)
+                return true;
+            var teams = Room.TeamManager.Values.ToArray();
+            if (teams.Any(team => team.Count == 0))
+                return false;
+            return teams.All(team => team.Players.Any(plr => plr.RoomInfo.IsReady || Room.Master == plr));
+        }
+    }
+    internal class SiegeBriefing : Briefing
+    {
+        public SiegeBriefing(GameRuleBase ruleBase)
+            : base(ruleBase)
+        {
+        }
+    }
+    internal class SiegePlayerRecord : PlayerRecord
+    {
+        public SiegePlayerRecord(Player plr)
+            : base(plr)
+        {
+        }
+        public override uint TotalScore => CapturePoints + CaptureAssists + Heal + Kills * 2 + KillAssists;
+        public uint ObtainedItems { get; set; }
+        public uint CapturePoints { get; set; }
+        public uint CaptureAssists { get; set; }
+        public uint Heal { get; set; }
+        public override void Serialize(BinaryWriter w, bool isResult)
+        {
+            base.Serialize(w, isResult);
+            w.Write(Kills);
+            w.Write(KillAssists);
+            w.Write(Heal);
+            w.Write(0);
+            w.Write(0);
+            w.Write(0);
+            w.Write(0);
+            w.Write(CapturePoints);
+            w.Write(CaptureAssists);
+            w.Write(ObtainedItems);
+        }
+        public override void Reset()
+        {
+            base.Reset();
+            Heal = 0;
+            CapturePoints = 0;
+            ObtainedItems = 0;
+        }
+        public override int GetExpGain(out int bonusExp)
+        {
+            base.GetExpGain(out bonusExp);
+            var config = Config.Instance.Game.SiegeExpRates;
+            var rank = 1;
+            var ranked = Player.Room.TeamManager.Players
+                .Where(plr => plr.RoomInfo.State == PlayerState.Waiting &&
+                              plr.RoomInfo.Mode == PlayerGameMode.Normal)
+                .ToArray();
+            foreach (var plr in ranked.OrderByDescending(plr => plr.RoomInfo.Stats.TotalScore))
+            {
+                if (plr == Player)
+                    break;
+                rank++;
+                if (rank > 3)
+                    break;
+            }
+            var placementBonus = 0f;
+            switch (rank)
+            {
+                case 1:
+                    placementBonus = config.FirstPlaceBonus;
+                    break;
+                case 2:
+                    placementBonus = config.SecondPlaceBonus;
+                    break;
+                case 3:
+                    placementBonus = config.ThirdPlaceBonus;
+                    break;
+            }
+            return (int)(TotalScore * config.ScoreFactor +
+                          placementBonus +
+                          ranked.Length * config.PlayerCountFactor +
+                          Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);
+        }
+    }
+}

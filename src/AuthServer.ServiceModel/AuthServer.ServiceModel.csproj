@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+    <Configurations>OldIDs_Debug;NewIDs_Debug;NewIDs_Release;OldIDs_Release;Latest_Debug;Latest_Release</Configurations>
+    <AssemblyVersion>2026.7.7.0</AssemblyVersion>
+    <FileVersion>2026.7.7.0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SantanaLib.DotNetty.SimpleRmi\SantanaLib.DotNetty.SimpleRmi.csproj" />
+    <ProjectReference Include="..\SantanaLib.Serialization\SantanaLib.Serialization.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProudNetSrc\ProudNetSrc.csproj" />
+  </ItemGroup>
+</Project>

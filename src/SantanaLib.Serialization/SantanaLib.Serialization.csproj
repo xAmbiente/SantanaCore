@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Sigil" Version="4.7.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\SantanaLib\SantanaLib.csproj"/>
+    </ItemGroup>
+</Project>

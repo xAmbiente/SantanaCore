@@ -1277,6 +1277,19 @@ namespace Santana.Network.Services
             using (var authdb = AuthDatabase.Open())
             using (var db = GameDatabase.Open())
             {
+                // El boton "add friend" del tab Community manda por NICKNAME (con AccountId=0). Click en la
+                // persona manda el AccountId. Si viene 0 pero hay nick, resolver el AccountId por nombre.
+                if (message.AccountId == 0 && !string.IsNullOrWhiteSpace(message.Nickname))
+                {
+                    var byName = DbUtil.Find<AccountDto>(authdb, statement => statement
+                        .Where($"{nameof(AccountDto.Nickname):C} = @Name OR {nameof(AccountDto.Username):C} = @Name")
+                        .WithParameters(new { Name = message.Nickname })).FirstOrDefault();
+                    if (byName != null)
+                        message.AccountId = (ulong)byName.Id;
+                }
+                if (message.AccountId == who.Account.Id)
+                    return;
+
                 var targetAccount = DbUtil.Find<AccountDto>(authdb, statement => statement
                     .Where($"{nameof(AccountDto.Id):C} = @Id")
                     .WithParameters(new { Id = message.AccountId })).FirstOrDefault();

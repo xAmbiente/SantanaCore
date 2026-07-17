@@ -19,22 +19,16 @@ namespace Santana.Network.Data.Game
 
      public uint Unk2 { get; set; }
 
-    
     public string Unk3 { get; set; }
 
-    
     public string Unk4 { get; set; }
 
-    
     public string Unk5 { get; set; }
 
-    
     public string Unk6 { get; set; }
 
-    
     public string Unk7 { get; set; }
 
-    
     public string Unk8 { get; set; }
   }
 }

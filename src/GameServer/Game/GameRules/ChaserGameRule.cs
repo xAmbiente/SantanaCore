@@ -161,7 +161,6 @@ namespace Santana.Game.GameRules
                     if (teamMgr.PlayersPlaying.Count() < MinPlayersToStart && !Room.Options.IsFriendly)
                         StateMachine.Fire(GameRuleStateTrigger.StartResult);
 
-
                     if (PlayersHunted.Count() == 0 && RoundTime >= TimeSpan.FromSeconds(59))
                         if (RoundTime >= Room.Options.TimeLimit)
                             StateMachine.Fire(GameRuleStateTrigger.StartResult);
@@ -250,9 +249,6 @@ namespace Santana.Game.GameRules
         {
             GetRecord(plr).Kills++;
 
-            // DIVERGE de originalcs/TS (que mandan el ack SOLO al que pego, y uno vacio al chaser):
-            // asi el resto de la sala nunca se enteraba de los +2 y su marcador quedaba desfasado.
-            // Va a toda la sala con el AccountId del que pego, que es quien suma.
             Room.Broadcast(new SlaughterAttackPointAckMessage
             {
                 AccountId = plr.Account.Id,
@@ -368,7 +364,6 @@ namespace Santana.Game.GameRules
             if (remaining <= TimeSpan.FromSeconds(10))
                 return;
             ChaserTarget = null;
-
 
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.ChaserIn,
                 (ulong)NextChaserDelay.TotalMilliseconds, 0, 0, ""));

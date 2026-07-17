@@ -14,7 +14,7 @@ namespace Santana.Network.Data.GameRule
 
      public int EntityId { get; set; }
 
-    [Fixed(6)] 
+    [Fixed(6)]
     public byte[] Position { get; set; }
 
      public int Ammo { get; set; }

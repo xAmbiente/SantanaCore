@@ -18,18 +18,14 @@ namespace Santana.Network.Data.Club
 
      public uint Id { get; set; }
 
-    
     public string Type { get; set; }
 
-    
     public string Name { get; set; }
 
      public int MemberCount { get; set; }
 
-    
     public string MasterName { get; set; }
 
-    
     public string CreationDate { get; set; }
 
      public int Unk1 { get; set; }
@@ -44,10 +40,8 @@ namespace Santana.Network.Data.Club
 
      public int Unk6 { get; set; }
 
-    
     public string Motto { get; set; }
 
-    
     public string Announce { get; set; }
 
      public int Unk7 { get; set; }

@@ -186,7 +186,7 @@ namespace Santana.Network.Services
 
                     foreach (var member in plr.Room.Players.Where(x => x.Value.Club.ClanName == plr.Club.ClanName))
                     {
-                      
+
                     }
                 }
             }

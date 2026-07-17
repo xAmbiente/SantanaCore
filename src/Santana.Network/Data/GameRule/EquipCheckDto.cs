@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.GameRule
@@ -14,12 +14,12 @@ namespace Santana.Network.Data.GameRule
       MovementSpeed = 1100;
     }
 
-    [Fixed(3)] 
+    [Fixed(3)]
     public ItemCheckDto[] Weapons { get; set; }
 
      public ItemCheckDto Skill { get; set; }
 
-    [Fixed(8)] 
+    [Fixed(8)]
     public ItemCheckDto[] Costumes { get; set; }
 
      public uint MovementSpeed { get; set; }

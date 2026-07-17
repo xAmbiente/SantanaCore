@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using SantanaLib.Serialization;
 using ProudNetSrc.Serialization.Serializers;

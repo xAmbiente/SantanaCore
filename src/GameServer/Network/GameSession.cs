@@ -1,11 +1,10 @@
-﻿using DotNetty.Transport.Channels;
+using DotNetty.Transport.Channels;
 using ProudNetSrc;
 
 namespace Santana.Network
 {
     internal class GameSession : ProudSession
     {
-        
 
         public GameSession(uint hostId, IChannel channel, ProudServer server)
             : base(hostId, channel, server)

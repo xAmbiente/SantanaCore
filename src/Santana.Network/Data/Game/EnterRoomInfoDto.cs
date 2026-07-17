@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.Game
@@ -33,7 +33,7 @@ namespace Santana.Network.Data.Game
 
      public byte Unk2 { get; set; }
 
-    [EndpointStr] 
+    [EndpointStr]
     public IPEndPoint RelayEndPoint { get; set; }
 
      public byte hasSpectator { get; set; }

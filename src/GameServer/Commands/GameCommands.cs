@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Santana.Network;
 using Santana.Network.Message.Game;
 
-
 namespace Santana.Commands
 {
   internal class GameCommands : ICommand

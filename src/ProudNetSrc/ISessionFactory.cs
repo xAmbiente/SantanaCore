@@ -1,4 +1,4 @@
-﻿using DotNetty.Transport.Channels;
+using DotNetty.Transport.Channels;
 
 namespace ProudNetSrc
 {

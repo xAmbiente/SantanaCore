@@ -53,7 +53,7 @@ namespace ProudNetSrc
         public bool Authenticated { get; set; }
         public bool XbnSent { get; set; }
         public DateTimeOffset ConnectDate { get; set; }
-        
+
         public IPEndPoint RemoteEndPoint { get; }
         public IPEndPoint LocalEndPoint { get; }
 

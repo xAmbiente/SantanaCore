@@ -12,7 +12,6 @@ namespace Santana.Network.Data.Game
          public int Unk2 { get; set; }
          public int Unk3 { get; set; }
 
-        
         public int[] Unk4 { get; set; } = new int[6];
     }
 }

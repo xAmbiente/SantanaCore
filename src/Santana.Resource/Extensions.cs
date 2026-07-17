@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Numerics;
 
 namespace Santana.Resource

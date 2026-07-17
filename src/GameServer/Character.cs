@@ -121,7 +121,6 @@ namespace Santana
                 case ItemCategory.Skill:
                     return Skills.CanEquip(item, (SkillSlot)slot);
 
-
                 default:
                     return false;
             }

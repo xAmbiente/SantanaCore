@@ -1,4 +1,4 @@
-﻿using Santana.Database.Game;
+using Santana.Database.Game;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

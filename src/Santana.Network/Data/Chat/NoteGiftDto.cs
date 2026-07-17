@@ -14,7 +14,6 @@ namespace Santana.Network.Data.Chat
 
      public uint Unk2 { get; set; }
 
-    
     public string Text { get; set; }
 
      public ItemNumber ItemNumber { get; set; }

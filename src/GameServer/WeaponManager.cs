@@ -5,7 +5,6 @@ using SantanaLib.Threading.Tasks;
 using Santana.Database.Game;
 using Santana.Network.Message.Game;
 
-
 namespace Santana
 {
     internal class WeaponManager

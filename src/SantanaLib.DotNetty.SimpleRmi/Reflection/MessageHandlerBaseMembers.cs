@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using SantanaLib.Reflection;
 
 namespace SantanaLib.DotNetty.SimpleRmi.Reflection

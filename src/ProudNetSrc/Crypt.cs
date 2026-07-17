@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc
+namespace ProudNetSrc
 {
   using System;
   using System.IO;
@@ -58,7 +58,7 @@
         RC4.GenerateKey();
       }
     }
-        
+
     public Crypt(byte[] secureKey)
     {
       AES = new RijndaelManaged

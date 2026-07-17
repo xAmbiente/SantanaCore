@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc
+namespace ProudNetSrc
 {
   public class SendOptions
   {

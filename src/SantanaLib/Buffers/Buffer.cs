@@ -29,7 +29,6 @@ namespace SantanaLib.Buffers
             if (array.Length - offset < count)
                 throw new ArgumentOutOfRangeException();
 
-
             BufferManager = bufferManager;
             Array = array;
             Offset = offset;

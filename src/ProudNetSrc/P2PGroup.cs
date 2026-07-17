@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc
+namespace ProudNetSrc
 {
   using System.Collections.Concurrent;
   using System.Collections.Generic;

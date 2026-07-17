@@ -1,4 +1,4 @@
-﻿using SantanaLib.Serialization;
+using SantanaLib.Serialization;
 
 namespace ProudNetSrc.Serialization
 {

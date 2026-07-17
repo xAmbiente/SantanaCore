@@ -15,10 +15,8 @@ namespace Santana.Network.Data.Club
 
      public uint Id { get; set; }
 
-    
     public string Type { get; set; }
 
-    
     public string Name { get; set; }
 
      public ClubState State { get; set; }

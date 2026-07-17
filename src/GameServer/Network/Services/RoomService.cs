@@ -553,10 +553,7 @@ namespace Santana.Network.Services
                 case GameState.Playing:
                     gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Normal
                                  ? PlayerState.Alive : PlayerState.Spectating;
-                    session.SendAsync(new RoomGameStartAckMessage());
-                    session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState, gamer.Room.SubGameState,
-                  gamer.Room.RoundTime));
-                    gamer.Room.GameRuleManager.GameRule.IntrudeCompleted(gamer);
+
                     break;
             }
             if (gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Chaser && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Captain && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.BattleRoyal)
@@ -609,6 +606,13 @@ namespace Santana.Network.Services
             gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Spectate
                 ? PlayerState.Spectating
                 : PlayerState.Alive;
+
+            if (phase == GameState.Playing)
+            {
+                session.SendAsync(new RoomGameStartAckMessage());
+                session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState, gamer.Room.SubGameState,
+                    gamer.Room.RoundTime));
+            }
             gamer.Room.GameRuleManager.GameRule.IntrudeCompleted(gamer);
         }
         [MessageHandler(typeof(RoomIntrudeRoundReq2Message))]

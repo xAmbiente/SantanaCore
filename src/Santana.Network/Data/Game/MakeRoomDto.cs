@@ -23,10 +23,8 @@ namespace Santana.Network.Data.Game
 
      public int Weapon_Limit { get; set; }
 
-    
     public string rName { get; set; }
 
-    
     public string rPassword { get; set; }
 
      public byte Spectator { get; set; }
@@ -42,7 +40,7 @@ namespace Santana.Network.Data.Game
      public int FMBURNMode { get; set; }
 
 #if LATESTS4
-        
+
         public int ServerKey { get; set; }
 #endif
   }

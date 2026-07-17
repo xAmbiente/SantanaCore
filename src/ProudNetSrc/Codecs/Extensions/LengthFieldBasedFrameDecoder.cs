@@ -8,7 +8,6 @@ namespace ProudNetSrc.Codecs.Extensions
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
 
-
   public class LengthFieldBasedFrameDecoder : ByteToMessageDecoder
   {
     readonly ByteOrder byteOrder;

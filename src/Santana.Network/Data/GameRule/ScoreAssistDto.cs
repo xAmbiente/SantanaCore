@@ -24,7 +24,7 @@ namespace Santana.Network.Data.GameRule
 
      public LongPeerId Assist { get; set; }
 
-    [Wire(Kind.Int)] 
+    [Wire(Kind.Int)]
     public AttackAttribute Weapon { get; set; }
 
      public LongPeerId Target { get; set; }
@@ -54,7 +54,7 @@ namespace Santana.Network.Data.GameRule
 
      public LongPeerId Assist { get; set; }
 
-    [Wire(Kind.Int)] 
+    [Wire(Kind.Int)]
     public AttackAttribute Weapon { get; set; }
 
      public LongPeerId Target { get; set; }

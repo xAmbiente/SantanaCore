@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using DotNetty.Buffers;
 
 namespace ProudNetSrc.Codecs

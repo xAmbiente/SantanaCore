@@ -1,4 +1,4 @@
-﻿namespace Santana.Shop
+namespace Santana.Shop
 {
   internal class BuyItemInfo
   {

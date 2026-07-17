@@ -1,4 +1,4 @@
-﻿using Santana.Database.Game;
+using Santana.Database.Game;
 using Santana.Resource;
 
 namespace Santana.Shop

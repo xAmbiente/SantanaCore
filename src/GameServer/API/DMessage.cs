@@ -23,7 +23,6 @@ namespace Santana.API
     {
     }
 
-
     internal void Write(MessageType obj)
     {
       Write((byte)obj);

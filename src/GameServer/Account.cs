@@ -1,4 +1,4 @@
-﻿using Santana.Database.Auth;
+using Santana.Database.Auth;
 
 namespace Santana
 {

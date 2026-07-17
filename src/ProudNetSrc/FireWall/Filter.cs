@@ -1,4 +1,4 @@
-﻿using DotNetty.Transport.Channels;
+using DotNetty.Transport.Channels;
 using Serilog;
 using Serilog.Core;
 using System;

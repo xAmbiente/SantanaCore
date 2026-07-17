@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SantanaLib.Serialization;
 using Sigil;
 using Sigil.NonGeneric;

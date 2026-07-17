@@ -18,7 +18,6 @@ namespace Santana.Network.Data.GameRule
 
      public uint Color { get; set; }
 
-    
     public uint[] Effects { get; set; }
 
      public float Power { get; set; }

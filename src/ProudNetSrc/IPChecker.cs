@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -82,14 +82,13 @@ namespace ProudNetSrc
                             startInfo.RedirectStandardOutput = true;
                             process.StartInfo = startInfo;
                             process.Start();
-                            
+
                             process.Close();
                             return true;
                         }
                         else
                         {
-                            
-                            
+
                             File.AppendAllText("BlockIPs.txt", $",{ip}");
 
                             startInfo.UseShellExecute = false;
@@ -101,7 +100,7 @@ namespace ProudNetSrc
                             startInfo.RedirectStandardOutput = true;
                             startInfo.CreateNoWindow = true;
                             process.StartInfo = startInfo;
-                            process.Start(); 
+                            process.Start();
                             process.Close();
                             return true;
                         }

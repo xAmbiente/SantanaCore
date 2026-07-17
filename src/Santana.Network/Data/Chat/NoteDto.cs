@@ -14,7 +14,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong Id { get; set; }
 
-    
     public string Sender { get; set; }
 
      public int MessageType { get; set; }
@@ -23,7 +22,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong Receiver { get; set; }
 
-    
     public string Title { get; set; }
 
      public uint ReadCount { get; set; }

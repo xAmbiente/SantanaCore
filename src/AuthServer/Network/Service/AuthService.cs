@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
@@ -57,14 +57,12 @@ namespace Santana.Network.Service
         private static readonly ILogger Logger =
             Log.ForContext(Constants.SourceContextPropertyName, nameof(AuthService));
 
-
         [MessageHandler(typeof(LoginKRReqMessage))]
         public async Task KRLoginHandler(ProudSession session, LoginKRReqMessage message)
         {
             Logger.Warning("Korean client handshake is not serviced here; answering {endpoint} with a failure code", session.RemoteEndPoint);
             await session.SendAsync(new LoginKRAckMessage(AuthLoginResult.Failed2));
         }
-
 
         [MessageHandler(typeof(LoginJPReqMessage))]
         public async Task JPLoginHandler(ProudSession session, LoginJPReqMessage message)
@@ -255,7 +253,7 @@ namespace Santana.Network.Service
                     await db.UpdateAsync(account);
 
                 }
-        
+
                 await session.SendAsync(new LoginEUAckMessage(AuthLoginResult.OK, (ulong)account.Id, sessionId, authsessionId,
                     newsessionId, datetime));
                 Console.WriteLine($"[Gateway] EU handshake complete for {account.Username} (record {account.Id}); tokens persisted and handed back");
@@ -367,7 +365,6 @@ namespace Santana.Network.Service
             return account.Bans?.FirstOrDefault(b => b.Date + (b.Duration ?? 0) > now);
         }
 
-
         [MessageHandler(typeof(ServerListReqMessage))]
         public async Task ServerListHandler(AuthServer server, ProudSession session)
         {
@@ -393,7 +390,6 @@ namespace Santana.Network.Service
             return result;
         }
 
- 
         [MessageHandler(typeof(GameDataReqMessage))]
         public async Task DataHandler(AuthServer server, ProudSession session)
         {
@@ -427,7 +423,7 @@ namespace Santana.Network.Service
                         Array.Copy(xbninfo, readoffset, data, 0, size);
 
                         await session.SendAsync(new GameDataAckMessage((uint)xbn, data, (uint)xbninfo.Length), SendOptions.ReliableSecureCompress);
-                     
+
                         readoffset += size;
                     }
                 }

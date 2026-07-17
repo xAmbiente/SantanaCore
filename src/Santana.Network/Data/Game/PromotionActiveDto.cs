@@ -11,7 +11,6 @@ namespace Santana.Network.Data.Game
 
      public int Unk3 { get; set; }
 
-    
     public string Unk4 { get; set; }
   }
 }

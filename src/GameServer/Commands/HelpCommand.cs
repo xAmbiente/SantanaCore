@@ -17,8 +17,6 @@ namespace Santana.Commands
             SubCommands = new ICommand[0] { };
         }
 
-
-
         public string Name { get; }
         public bool AllowConsole { get; }
         public SecurityLevel Permission { get; }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 
 namespace SantanaLib
@@ -30,6 +30,6 @@ namespace SantanaLib
             var newArray = Expression.NewArrayBounds(typeof (T), param);
 
             return Expression.Lambda<Func<int, T[]>>(newArray, param);
-        } 
+        }
     }
 }

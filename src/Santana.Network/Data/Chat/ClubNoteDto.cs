@@ -21,10 +21,8 @@ namespace Santana.Network.Data.Chat
 
      public byte Unk5 { get; set; }
 
-    
     public string Unk6 { get; set; }
 
-    
     public string Unk7 { get; set; }
   }
 }

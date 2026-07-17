@@ -1,4 +1,4 @@
-﻿using System.Xml.Serialization;
+using System.Xml.Serialization;
 
 namespace Santana.Resource.xml
 {
@@ -18,5 +18,5 @@ namespace Santana.Resource.xml
         [XmlAttribute] public uint Pen { get; set; }
 
     }
-   
+
 }

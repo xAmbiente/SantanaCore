@@ -656,7 +656,7 @@ namespace Santana.Network.Services
                 plr?.SendAsync(new MapOpenInfosMessage());
                 await plr.SendAsync(new PlayerAccountInfoAckMessage(plr.Map<Player, PlayerAccountInfoDto>()));
                 await plr.SendAsync(new ServerResultAckMessage(ServerResult.WelcomeToS4World));
-                
+
                 try
                 {
                     await ClaimDailyAttendanceAsync(plr);

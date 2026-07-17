@@ -8,10 +8,9 @@ namespace Santana.Network.Data.Club
     [Dto]
     public class AdminGradeDto
     {
-        
+
         public ulong AccountId { get; set; }
 
-        
         public int Unk { get; set; }
     }
 }

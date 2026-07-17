@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.GameRule
@@ -18,7 +18,6 @@ namespace Santana.Network.Data.GameRule
             AssistPoints = 0;
             Unk1 = 0;
             Player = 0;
-
 
             Assists = Array.Empty<ulong>();
         }
@@ -43,7 +42,6 @@ namespace Santana.Network.Data.GameRule
 
          public ulong Player { get; set; }
 
-        
         public ulong[] Assists { get; set; }
 
          public ushort Points { get; set; }

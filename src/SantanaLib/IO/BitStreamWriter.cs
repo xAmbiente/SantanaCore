@@ -21,7 +21,6 @@ namespace SantanaLib.IO
             if (countOfBits <= 0 || countOfBits > 32)
                 throw new ArgumentOutOfRangeException(nameof(countOfBits));
 
-
             var fullBytes = countOfBits / 8;
 
             var bitsToWrite = countOfBits % 8;

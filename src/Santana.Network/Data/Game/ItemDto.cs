@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.Game
@@ -24,20 +24,18 @@ namespace Santana.Network.Data.Game
 
      public uint Color { get; set; }
 
-    
     public DateTimeOffset ExpireTime { get; set; }
 
      public int Durability { get; set; }
 
-    
     public ItemEffectDto[] Effects { get; set; }
 
      public uint EnchantMP { get; set; }
 
      public uint EnchantLevel { get; set; }
 #if LATESTS4
-        
-        public uint EsperID { get; set; } 
+
+        public uint EsperID { get; set; }
 #endif
   }
 }

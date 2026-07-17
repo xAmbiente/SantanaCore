@@ -1,4 +1,4 @@
-﻿namespace Santana
+namespace Santana
 {
     using System;
     using System.Collections;
@@ -135,7 +135,7 @@
                     var newPlrFriend = new Friend(friendId, Player.Account.Id, friendState, playerState);
                     if (!plr.FriendManager._friends.TryAdd(Player.Account.Id, newPlrFriend))
                     {
-                     
+
                         return null;
                     }
                 }

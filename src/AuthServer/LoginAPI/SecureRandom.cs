@@ -9,7 +9,6 @@ namespace Santana.LoginAPI
     {
         private readonly RandomNumberGenerator source = RandomNumberGenerator.Create();
 
-
         public int Next()
         {
             var intBytes = new byte[sizeof(int)];

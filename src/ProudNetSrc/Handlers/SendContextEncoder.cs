@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc.Handlers
+namespace ProudNetSrc.Handlers
 {
   using System.Collections.Generic;
   using System.IO;

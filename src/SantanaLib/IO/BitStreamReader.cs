@@ -80,7 +80,7 @@ namespace SantanaLib.IO
             }
             return retVal;
         }
-        
+
         public uint ReadUInt16Reverse(int countOfBits)
         {
             if (countOfBits > 16 || countOfBits <= 0)

@@ -12,7 +12,6 @@ namespace Santana.Network.Data.GameRule
 
      public int Unk1 { get; set; }
 
-    
     public string Unk2 { get; set; }
 
      public int Unk3 { get; set; }

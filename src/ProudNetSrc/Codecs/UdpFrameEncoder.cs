@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc.Codecs
+namespace ProudNetSrc.Codecs
 {
   using System;
   using System.Collections.Generic;

@@ -112,7 +112,7 @@ namespace Santana.Network.Services
                 ServerTime = (uint)Environment.TickCount
             });
         }
-       
+
         [MessageHandler(typeof(CheckHashKeyValueReqMessage))]
         public void CheckHashKeyValueReq(GameSession session, CheckHashKeyValueReqMessage message)
         {

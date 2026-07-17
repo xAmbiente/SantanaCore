@@ -47,7 +47,6 @@ namespace Santana.Game.GameRules
                 room.GameRuleManager.GameRule = room.RoomManager.GameRuleFactory.Get(room.Options.GameRule, room);
             }
 
-
         }
 
         public override GameRule GameRule => GameRule.Random;

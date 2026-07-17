@@ -1,4 +1,4 @@
-﻿namespace Santana
+namespace Santana
 {
   public struct S4Color
   {

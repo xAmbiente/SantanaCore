@@ -1,4 +1,4 @@
-﻿using DotNetty.Common.Utilities;
+using DotNetty.Common.Utilities;
 
 namespace Santana.API
 {

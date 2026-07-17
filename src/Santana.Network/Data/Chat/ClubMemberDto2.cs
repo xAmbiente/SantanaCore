@@ -21,7 +21,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong AccountId { get; set; }
 
-    
     public string Nickname { get; set; }
 
      public int Unk1 { get; set; }
@@ -32,10 +31,8 @@ namespace Santana.Network.Data.Chat
 
      public int Unk5 { get; set; }
 
-    
     public string JoinDate { get; set; }
 
-    
     public string LastLogin { get; set; }
 
      public int Unk12 { get; set; }
@@ -66,7 +63,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong AccountId { get; set; }
 
-    
     public string Nickname { get; set; }
 
      public int Unk1 { get; set; }
@@ -79,12 +75,10 @@ namespace Santana.Network.Data.Chat
 
      public int Unk5 { get; set; }
 
-    
     public string JoinDate { get; set; }
 
      public int Unk7 { get; set; }
 
-    
     public string LastLogin { get; set; }
 
      public int ServerId { get; set; }

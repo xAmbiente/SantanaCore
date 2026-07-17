@@ -10,7 +10,6 @@ namespace Santana.Network.Data.Chat
          public uint Domination { get; set; }
     }
 
-
     [Dto]
     public class CPTUserDataScoreDto
     {

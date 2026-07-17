@@ -25,10 +25,8 @@ namespace Santana.Network.Data.GameRule
 
      public int ItemLimit { get; set; }
 
-    
     public string Password { get; set; }
 
-    
     public string Name { get; set; }
 
      public bool HasSpectator { get; set; }
@@ -63,10 +61,8 @@ namespace Santana.Network.Data.GameRule
 
      public int ItemLimit { get; set; }
 
-    
     public string Password { get; set; }
 
-    
     public string Name { get; set; }
 
      public bool HasSpectator { get; set; }

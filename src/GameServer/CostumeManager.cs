@@ -6,7 +6,6 @@ using Santana.Database.Game;
 using Santana.Network.Data.Chat;
 using Santana.Network.Message.Game;
 
-
 namespace Santana
 {
     internal class CostumeManager

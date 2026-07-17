@@ -12,19 +12,17 @@ namespace Santana.Network.Data.Game
             Unk3 = "";
         }
 
-        
         public string MasterName { get; set; }
 
          public uint MasterLevel { get; set; }
 
-        
         public string Unk3 { get; set; }
 
          public bool IsMasterInClan { get; set; }
 
          public uint ScoreLimit { get; set; }
 
-        [Sec] 
+        [Sec]
         public TimeSpan TimeLimit { get; set; }
 
          public GameState State { get; set; }

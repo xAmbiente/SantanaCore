@@ -21,7 +21,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong AccountId { get; set; }
 
-    
     public string Nickname { get; set; }
 
      public int Unk { get; set; }

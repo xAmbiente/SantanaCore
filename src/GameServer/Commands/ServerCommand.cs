@@ -44,7 +44,6 @@ namespace Santana.Commands
             return text.ToString();
         }
 
-
         private class StatusCommand : ICommand
         {
             public StatusCommand()

@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.Game
@@ -22,19 +22,15 @@ namespace Santana.Network.Data.Game
 
      public ushort PlayerLimit { get; set; }
 
-    [IntBool] 
+    [IntBool]
     public bool IsClanChannel { get; set; }
 
-    
     public string Name { get; set; }
 
-    
     public string Rank { get; set; }
 
-    
     public string Description { get; set; }
 
-    
     public Color Color { get; set; }
 
      public uint MinLevel { get; set; }

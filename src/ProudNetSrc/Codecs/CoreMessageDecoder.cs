@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc.Codecs
+namespace ProudNetSrc.Codecs
 {
   using System.Collections.Generic;
   using SantanaLib.IO;

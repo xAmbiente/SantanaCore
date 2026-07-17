@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using SantanaLib.DotNetty.SimpleRmi;
 
 namespace AuthServer.ServiceModel

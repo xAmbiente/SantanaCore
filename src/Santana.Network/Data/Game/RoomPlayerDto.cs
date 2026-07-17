@@ -16,7 +16,6 @@ namespace Santana.Network.Data.Game
 
      public byte Unk1 { get; set; }
 
-    
     public string Nickname { get; set; }
 
      public byte Pos { get; set; }
@@ -24,7 +23,7 @@ namespace Santana.Network.Data.Game
      public bool IsGM { get; set; }
 
 #if LATESTS4
-        
+
         public byte Unk3 { get; set; }
 #endif
   }

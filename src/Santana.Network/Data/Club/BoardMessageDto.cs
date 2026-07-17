@@ -7,7 +7,6 @@ namespace Santana.Network.Data.Club
   {
      public int Unk1 { get; set; }
 
-    
     public string Unk2 { get; set; }
 
      public int Unk3 { get; set; }
@@ -16,15 +15,12 @@ namespace Santana.Network.Data.Club
 
      public int Unk5 { get; set; }
 
-    
     public string Unk6 { get; set; }
 
      public int Unk7 { get; set; }
 
-    
     public string Unk8 { get; set; }
 
-    
     public string Unk9 { get; set; }
 
      public int Unk10 { get; set; }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 
 namespace Santana
@@ -6,7 +6,6 @@ namespace Santana
   public class SecureRandom : RandomNumberGenerator
   {
     private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
-
 
     public int Next()
     {

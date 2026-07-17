@@ -19,7 +19,7 @@ namespace Santana.Network.Data.GameRule
 
      public int Unk4 { get; set; }
 
-    [Fixed(6)] 
+    [Fixed(6)]
     public byte[] Position { get; set; }
 
      public long Unk6 { get; set; }
@@ -32,7 +32,6 @@ namespace Santana.Network.Data.GameRule
 
      public int Unk10 { get; set; }
 
-    
     public int[] Unk11 { get; set; }
 
      public short Unk12 { get; set; }

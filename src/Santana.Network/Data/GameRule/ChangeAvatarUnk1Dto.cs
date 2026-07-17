@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using ProudNetSrc.Serialization;
 namespace Santana.Network.Data.GameRule
@@ -18,22 +18,16 @@ namespace Santana.Network.Data.GameRule
 
      public ulong AccountId { get; set; }
 
-    
     public ItemNumber[] Costumes { get; set; }
 
-    
     public ItemNumber[] Skills { get; set; }
 
-    
     public ItemNumber[] Weapons { get; set; }
 
-    
     public int[] Unk5 { get; set; }
 
-    
     public int[] Unk6 { get; set; }
 
-    
     public int[] Unk7 { get; set; }
 
      public int Unk8 { get; set; }

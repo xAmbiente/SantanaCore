@@ -57,7 +57,7 @@ namespace Santana.Resource
             if (cached == null)
             {
                 Logger.Information("Warming up table: channel list");
-               
+
                 using (var db = GameDatabase.Open())
                 {
                     cached = DbUtil.Find<ChannelDto>(db).ToList();
@@ -72,7 +72,7 @@ namespace Santana.Resource
             if (cached == null)
             {
                 Logger.Information("Warming up table: clan roster");
-                
+
                 using (var db = GameDatabase.Open())
                 {
                     var allClubs = DbUtil.Find<ClubDto>(db).ToList();
@@ -113,7 +113,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<uint, ItemEffect>>(ResourceCacheType.Effects);
             if (cached == null)
             {
-                
+
                 cached = _loader.LoadEffects().ToDictionary(effect => effect.Id);
                 _store.Set(ResourceCacheType.Effects, cached);
             }
@@ -124,7 +124,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<ItemNumber, ItemInfo>>(ResourceCacheType.Items);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadItems_3().ToDictionary(item => item.ItemNumber);
                 _store.Set(ResourceCacheType.Items, cached);
             }
@@ -135,7 +135,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<string, ItemInfo>>(ResourceCacheType.Items);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadItems_4().ToDictionary(item => item.Name);
                 _store.Set(ResourceCacheType.Items, cached);
             }
@@ -146,7 +146,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyList<DefaultItem>>(ResourceCacheType.DefaultItems);
             if (cached == null)
             {
-                
+
                 cached = _loader.LoadDefaultItems().ToList();
                 _store.Set(ResourceCacheType.DefaultItems, cached);
             }
@@ -157,7 +157,7 @@ namespace Santana.Resource
             var cached = _store.Get<ShopResources>(ResourceCacheType.Shop);
             if (cached == null)
             {
-               
+
                 cached = new ShopResources();
                 _store.Set(ResourceCacheType.Shop, cached);
             }
@@ -170,7 +170,7 @@ namespace Santana.Resource
             var cached = _store.Get<RandomShopResources>(ResourceCacheType.RandomShop);
             if (cached == null)
             {
-               
+
                 cached = new RandomShopResources();
                 _store.Set(ResourceCacheType.RandomShop, cached);
             }
@@ -183,7 +183,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<int, Experience>>(ResourceCacheType.Exp);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadExperience().ToDictionary(e => e.Level);
                 _store.Set(ResourceCacheType.Exp, cached);
             }
@@ -194,7 +194,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<int, MapInfo>>(ResourceCacheType.Maps);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadMaps().ToDictionary(map => map.Id);
                 _store.Set(ResourceCacheType.Maps, cached);
             }
@@ -205,7 +205,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<string, GameTempo>>(ResourceCacheType.GameTempo);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadGameTempos().ToDictionary(t => t.Name);
                 _store.Set(ResourceCacheType.GameTempo, cached);
             }
@@ -216,7 +216,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<ItemNumber, AddCapsule>>(ResourceCacheType.Capsules);
             if (cached == null)
             {
-              
+
                 cached = _loader.LoadCapsules().ToDictionary(t => t.CapsuleItemId);
                 _store.Set(ResourceCacheType.Capsules, cached);
             }
@@ -227,7 +227,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<ulong, CapsuleRewards>>(ResourceCacheType.ItemRewards);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadItemRewards().ToDictionary(t => (ulong)t.Item);
                 _store.Set(ResourceCacheType.ItemRewards, cached);
             }
@@ -238,7 +238,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<uint, ItemEnchant>>(ResourceCacheType.Enchant);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadItemEnchant().ToDictionary(t => (uint)t.Id);
                 _store.Set(ResourceCacheType.Enchant, cached);
             }
@@ -249,7 +249,7 @@ namespace Santana.Resource
             var cached = _store.Get<IReadOnlyDictionary<uint, EsperEnchant>>(ResourceCacheType.EsperEnchant);
             if (cached == null)
             {
-               
+
                 cached = _loader.LoadEsperEnchant().ToDictionary(t => (uint)t.Level);
                 _store.Set(ResourceCacheType.EsperEnchant, cached);
             }

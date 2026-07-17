@@ -1,4 +1,4 @@
-﻿namespace Santana.Resource
+namespace Santana.Resource
 {
   public class GameTempo
   {

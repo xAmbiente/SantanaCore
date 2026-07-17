@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace Santana.Resource
@@ -11,8 +11,6 @@ namespace Santana.Resource
         public EnchantSys()
         {
         }
-
-
 
     }
 
@@ -53,7 +51,5 @@ namespace Santana.Resource
             Random = new Random();
         }
     }
-
-
 
 }

@@ -30,7 +30,7 @@ namespace Santana.Network.Data.Game
 
          public uint Unk2 { get; set; }
 
-        [Sec] 
+        [Sec]
         public TimeSpan GameTime { get; set; }
 
          public bool IsGM { get; set; }

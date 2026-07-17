@@ -211,7 +211,6 @@ namespace Santana.Game
             w.Write(bonusPen);
             w.Write(0);
 
-
             w.Write(0);
             w.Write((byte)0);
             w.Write((byte)0);

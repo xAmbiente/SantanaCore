@@ -1,4 +1,4 @@
-﻿namespace ProudNetSrc
+namespace ProudNetSrc
 {
   using System;
   using System.Net;

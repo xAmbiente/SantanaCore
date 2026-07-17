@@ -149,7 +149,6 @@ namespace Santana.Resource
             return itemInfo?.PriceGroup.GetPrice(periodType, period);
         }
 
-
         public ItemPriceType GetFirstPrice(ItemNumber itemNumber)
         {
             var item = GetItem(itemNumber);

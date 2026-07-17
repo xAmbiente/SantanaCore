@@ -17,7 +17,6 @@ using MySqlConnector;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
-
 namespace Santana.Network.Services
 {
     internal class CommunityService : ProudMessageHandler
@@ -1277,8 +1276,7 @@ namespace Santana.Network.Services
             using (var authdb = AuthDatabase.Open())
             using (var db = GameDatabase.Open())
             {
-                // El boton "add friend" del tab Community manda por NICKNAME (con AccountId=0). Click en la
-                // persona manda el AccountId. Si viene 0 pero hay nick, resolver el AccountId por nombre.
+
                 if (message.AccountId == 0 && !string.IsNullOrWhiteSpace(message.Nickname))
                 {
                     var byName = DbUtil.Find<AccountDto>(authdb, statement => statement

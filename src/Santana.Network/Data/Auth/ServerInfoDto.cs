@@ -18,14 +18,12 @@ namespace Santana.Network.Data.Auth
 
      public ServerType Type { get; set; }
 
-    
     public string Name { get; set; }
 
      public ushort PlayerLimit { get; set; }
 
      public ushort PlayerOnline { get; set; }
 
-    
     public IPEndPoint EndPoint { get; set; }
 
      public ushort GroupId { get; set; }

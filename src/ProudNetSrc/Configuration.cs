@@ -8,7 +8,7 @@ namespace ProudNetSrc
 {
   public class Configuration
   {
-        
+
     public Configuration()
     {
       PingTimeout = TimeSpan.FromSeconds(20);

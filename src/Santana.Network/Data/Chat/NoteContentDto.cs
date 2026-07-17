@@ -13,7 +13,6 @@ namespace Santana.Network.Data.Chat
 
      public ulong Unk1 { get; set; }
 
-    
     public string Message { get; set; }
 
      public NoteItemDto Item { get; set; }

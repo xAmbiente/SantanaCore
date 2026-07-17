@@ -31,16 +31,12 @@ namespace Santana.Network.Data.Chat
 
      public ulong Unk9 { get; set; }
 
-    
     public string Unk10 { get; set; }
 
-    
     public string Unk11 { get; set; }
 
-    
     public string Unk12 { get; set; }
 
-    
     public string Unk13 { get; set; }
   }
 }

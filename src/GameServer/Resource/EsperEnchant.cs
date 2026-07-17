@@ -1,4 +1,4 @@
-﻿using Santana.Resource.xml;
+using Santana.Resource.xml;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -15,7 +15,6 @@ namespace Santana
 
         public Player Player { get; internal set; }
 
-
         public int BonusExp { get; internal set; }
 
         public int BonusPen { get; internal set; }

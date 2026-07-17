@@ -22,10 +22,8 @@ namespace Santana.Network.Data.Club
 
      public uint Id2 { get; set; }
 
-    
     public string Name { get; set; }
 
-    
     public string Type { get; set; }
 
      public byte Unk1 { get; set; }
@@ -42,23 +40,18 @@ namespace Santana.Network.Data.Club
 
      public uint Unk7 { get; set; }
 
-    
     public string MasterName { get; set; }
 
      public uint Unk8 { get; set; }
 
      public uint MemberCount { get; set; }
 
-    
     public string Motto { get; set; }
 
-    
     public string CreationDate { get; set; }
 
-    
     public string Unk10 { get; set; }
 
-    
     public string Unk11 { get; set; }
 
      public uint Unk12 { get; set; }

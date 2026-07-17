@@ -1,4 +1,4 @@
-﻿namespace Santana.Network.Data.Relay
+namespace Santana.Network.Data.Relay
 {
   public struct RoomLocation
   {

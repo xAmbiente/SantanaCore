@@ -1,4 +1,4 @@
-﻿using Santana.Database.Game;
+using Santana.Database.Game;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -37,10 +37,8 @@ namespace Santana.Database.Auth
         public IList<NicknameHistoryDto> NicknameHistory { get; set; } = new List<NicknameHistoryDto>();
         public IList<IPBanDto> IPBans { get; set; } = new List<IPBanDto>();
         public IList<LoginAPIDto> LoginAPI { get; set; } = new List<LoginAPIDto>();
-        
+
     }
-
-
 
     [Table("hwid_bans")]
     public class HwidBanDto
@@ -152,5 +150,4 @@ namespace Santana.Database.Auth
         public long Date { get; set; }
     }
 
-  
 }

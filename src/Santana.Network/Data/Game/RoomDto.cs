@@ -25,10 +25,8 @@ namespace Santana.Network.Data.Game
 
      public int WeaponLimit { get; set; }
 
-    
     public string Password { get; set; }
 
-    
     public string Name { get; set; }
 
      public bool HasSpectator { get; set; }

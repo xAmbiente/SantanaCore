@@ -1,4 +1,4 @@
-﻿namespace AuthServer.ServiceModel
+namespace AuthServer.ServiceModel
 {
   public enum RegisterResult : byte
   {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 
 using ProudNetSrc.Serialization;
@@ -24,45 +24,38 @@ namespace Santana.Network.Data.P2P
 
      public Team Team { get; set; }
 
-    
     public Vector3 Position { get; set; }
 
      public byte Rotation1 { get; set; }
 
      public byte Rotation2 { get; set; }
 
-    
     public ItemDto[] Costumes { get; set; }
 
-    
     public ItemDto[] Skills { get; set; }
 
-    
     public ItemDto[] Weapons { get; set; }
 
-    [Wire(Kind.UInt)] 
+    [Wire(Kind.UInt)]
     public WeaponSlot CurrentWeapon { get; set; }
 
      public CharacterGender Gender { get; set; }
 
-    
     public string Name { get; set; }
 
      public byte Unk1 { get; set; }
 
-    
     public string Unk2 { get; set; }
 
-    [Compressed] 
+    [Compressed]
     public float CurrentHP { get; set; }
 
-    [Compressed] 
+    [Compressed]
     public float MaxHP { get; set; }
 
-    [Compressed] 
+    [Compressed]
     public float Unk3 { get; set; }
 
-    
     public ValueDto[] Values { get; set; }
   }
 }

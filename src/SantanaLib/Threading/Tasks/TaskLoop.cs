@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ namespace SantanaLib.Threading.Tasks
 
             _callback = callback;
         }
-        
+
         protected override Task OnTickAsync(TimeSpan elapsed)
         {
             return _callback(elapsed);
@@ -65,7 +65,7 @@ namespace SantanaLib.Threading.Tasks
         {
             if (!IsRunning || _cts.IsCancellationRequested)
                 return;
-            
+
             _cts.Cancel();
             Task?.Wait(timeout);
         }
@@ -108,7 +108,7 @@ namespace SantanaLib.Threading.Tasks
             Task = null;
             IsRunning = false;
         }
-        
+
         private async Task WaitTickRequestedAsync()
         {
             while (true)

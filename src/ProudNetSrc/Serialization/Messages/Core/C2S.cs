@@ -144,7 +144,6 @@ namespace ProudNetSrc.Serialization.Messages.Core
     public byte[] Data { get; set; }
   }
 
-
   [SantanaContract]
   internal class ReliableRelay1UnkMessage : ICoreMessage
   {

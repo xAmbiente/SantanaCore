@@ -5,7 +5,7 @@ namespace Santana.Network.Data.Game
   [Dto]
   public class NoticeEnchantDto
   {
-    
+
     public string Unk1 { get; set; }
 
      public ulong Unk2 { get; set; }

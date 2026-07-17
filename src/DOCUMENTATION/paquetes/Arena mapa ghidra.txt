@@ -1,0 +1,217 @@
+# Arena - Mapa completo (Ghidra)
+
+Después de revisar todo el flujo del cliente, esto es lo que hace realmente Arena y dónde termina rompiéndose.
+
+## Estructura principal
+
+```
+arena_view
+ └── matchState (+0x98)
+      ├── Round (+0xd0)
+      │     Fighter Alpha
+      │     Supporter Alpha
+      │     Fighter Beta
+      │     Supporter Beta
+      │     WinPoint
+      ├── flags
+      └── otros estados
+
+Actor
+ └── +0x298 -> Visual
+       └── 3 slots de armas/items
+```
+
+El `matchState` es prácticamente el centro de todo. Desde ahí salen los datos de la ronda, los jugadores y el estado del combate.
+
+---
+
+# Dispatcher de Arena
+
+La función `FUN_018db840` recibe el substate y decide qué hacer.
+
+```
+14 -> READY
+15 -> DRAW
+16 -> WIN / LOSE
+```
+
+Primero verifica que exista un `ArenaGameRule` (`DAT_025bd770 + 0x124`).
+
+---
+
+## READY (14)
+
+Hace muy pocas cosas.
+
+* Activa un par de flags.
+* Reproduce el sonido `arena_round_start`.
+* Muestra la pantalla de inicio.
+
+Aquí **no llama** la restauración de supporters, por eso nunca crashea en este punto.
+
+---
+
+## DRAW (15)
+
+Cuando termina en empate:
+
+* Coloca las poses de los Fighters.
+* Llama a `FUN_018d6d20`, que restaura los Supporters.
+* Muestra el efecto de Draw.
+
+Si el Visual del Supporter no está bien construido, aquí explota.
+
+---
+
+## WIN / LOSE (16)
+
+Hace prácticamente lo mismo que DRAW.
+
+* Coloca las poses finales.
+* Ejecuta la restauración.
+* Decide Win o Lose usando `round+0x84`.
+* Llena toda la pantalla de resultados.
+
+Si algún Visual está corrupto también termina crasheando.
+
+---
+
+# Restauración
+
+La función responsable es:
+
+```
+FUN_018d6d20(matchState)
+```
+
+Primero limpia un flag y luego procesa los dos Supporters.
+
+Internamente llama a:
+
+```
+FUN_018da700(matchState,idLo,idHi)
+```
+
+Ahí busca el Actor usando el ID.
+
+Si lo encuentra hace algo como:
+
+```
+FUN_01677470(actor->Visual,0)
+
+...
+
+FUN_01677470(actor->Visual,1)
+```
+
+Si `actor->Visual` es NULL o está corrupto, el crash ocurre aquí.
+
+READY nunca pasa por esta función.
+
+---
+
+# Result Screen
+
+La pantalla de resultados también toca exactamente el mismo Visual.
+
+La función es:
+
+```
+FUN_013ad4d0()
+```
+
+Recorre los tres slots de armas.
+
+```
+item = Visual->slot[i];
+
+if(item != 0)
+    usar item+0x50
+```
+
+El problema es que a veces el slot contiene basura (por ejemplo `0x64`).
+
+Como no es NULL, pasa la validación y termina haciendo un dereference inválido.
+
+Resultado: otro crash diferente, pero causado por el mismo problema.
+
+---
+
+# Spawn de jugadores
+
+La función `FUN_010cd930` coloca cada jugador según los IDs del Round.
+
+Los Fighters van al ring.
+
+Los Supporters aparecen en la base.
+
+Los demás quedan como espectadores.
+
+---
+
+# Qué paquete llena cada dato
+
+| Offset                | Paquete                             |
+| --------------------- | ----------------------------------- |
+| Fighters / Supporters | 3097 Sync_Arena_Battle_Idx          |
+| WinPoint              | 3102 Score_Arena_BattlePlayer_Leave |
+| Orden de jugadores    | 3098 Sync_First_Arena_Battle_Idx    |
+| Barra de Support      | 3101 Arena_Special_Point_Ack        |
+| HP inicial            | 3050 AdminChangeHP                  |
+
+Los slots de armas **no los llena Arena**.
+
+Vienen del Character/Loadout del jugador.
+
+---
+
+# Orden de envío
+
+La secuencia normal es:
+
+1. AdminChangeHP.
+2. Sync_First_Arena_Battle_Idx.
+3. Sync_Arena_Battle_Idx.
+4. READY.
+5. GO.
+6. Durante la pelea llegan los paquetes de Support y HP.
+7. Al terminar:
+
+   * 3102 + WIN
+   * o DRAW.
+
+---
+
+# Conclusión
+
+Después de seguir todo el flujo, el crash no viene de una función específica.
+
+Hay varios lugares donde termina explotando:
+
+* Restauración de Supporters.
+* Result Screen.
+* Cualquier otra función que use el Visual.
+
+Todos tienen la misma causa.
+
+El objeto `actor->Visual` de alguno de los jugadores nunca termina de construirse correctamente.
+
+Cuando otra parte del cliente intenta usarlo, aparecen punteros basura, vtables inválidas o slots de armas corruptos, y ahí ocurre el crash.
+
+Por eso parece un "whack-a-mole": arreglas un crash y aparece otro distinto, pero todos salen del mismo origen.
+
+Lo importante es que Arena **no construye ese Visual**.
+
+Arena únicamente usa IDs y estados.
+
+El Visual viene del sistema de Character/Loadout del jugador.
+
+Por eso los paquetes de Arena (`3097`, `3098`, `3102`) pueden ser exactamente iguales a los del TS y aun así el cliente sigue crasheando.
+
+El problema real está antes, en la sincronización del Character/Avatar/Loadout.
+
+En 1v1 normalmente nunca pasa porque solo existen dos actores y ambos alcanzan a renderizarse.
+
+En 2v2 ya hay cuatro actores. Si uno no termina de renderizar correctamente en algún cliente, su Visual queda incompleto y cualquier función que lo use termina explotando.
+
+Ahí está el bug de verdad, no dentro del `ArenaGameRule`.

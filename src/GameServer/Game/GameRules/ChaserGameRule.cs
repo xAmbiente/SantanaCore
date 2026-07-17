@@ -248,18 +248,16 @@ namespace Santana.Game.GameRules
 
         public void OnScoreAttack(Player plr, float unk1, float unk2)
         {
-            var before = GetRecord(plr).Kills++;
+            GetRecord(plr).Kills++;
 
-            plr.SendAsync(new SlaughterAttackPointAckMessage
+            // DIVERGE de originalcs/TS (que mandan el ack SOLO al que pego, y uno vacio al chaser):
+            // asi el resto de la sala nunca se enteraba de los +2 y su marcador quedaba desfasado.
+            // Va a toda la sala con el AccountId del que pego, que es quien suma.
+            Room.Broadcast(new SlaughterAttackPointAckMessage
             {
                 AccountId = plr.Account.Id,
                 Unk1 = unk1,
                 Unk2 = unk2
-            });
-
-            Chaser.SendAsync(new SlaughterAttackPointAckMessage
-            {
-
             });
         }
 

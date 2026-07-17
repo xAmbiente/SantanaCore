@@ -155,10 +155,20 @@ namespace Santana.Game.GameRules
             base.OnIntrudeCompleted(plr);
             var alphaReady = Room.TeamManager[Team.Alpha].PlayersPlaying.Any();
             var betaReady = Room.TeamManager[Team.Beta].PlayersPlaying.Any();
-            if (alphaReady && betaReady)
-                SendBattleIndex(plr);
-            else
+            if (!alphaReady || !betaReady)
+            {
                 Trace($"OnIntrude {plr.Account.Nickname}: roster incompleto (alphaReady={alphaReady} betaReady={betaReady}) -> NO mando Sync_Idx todavia");
+                return;
+            }
+            // Re-broadcast del battle index a TODOS (menos los dos fighters activos, que se CONGELAN si se les
+            // re-manda el 3097 mid-round) para que todos re-sincronicen el round struct tras un (re)join.
+            // Arregla el desync de roster ("unos ven a todos y otros no").
+            foreach (var p in Room.TeamManager.PlayersPlaying)
+            {
+                if (p == PlayerAlphaBattle || p == PlayerBetaBattle)
+                    continue;
+                SendBattleIndex(p);
+            }
         }
         public override PlayerRecord GetPlayerRecord(Player plr)
         {
@@ -355,6 +365,12 @@ namespace Santana.Game.GameRules
         {
             if (_roundWinner == null)
             {
+                // Limpia el slot supporter del round struct del cliente ANTES del substate: la restauracion
+                // FUN_018d6d20 (win/draw) corre sobre el visual del supporter y crashea si esta a medio armar
+                // (el visual [0xa6] del C# se rompe en 2v2). Fighter-only aca -> restauracion no encuentra
+                // supporter -> no crash. NO es 1:1 TS (el TS no lo necesita, su visual del supporter es valido),
+                // pero el visual roto es un bug de render del cliente que el server solo puede enmascarar asi.
+                BroadcastFightersOnly();
                 Room.TeamManager[Team.Alpha].Score++;
                 Room.TeamManager[Team.Beta].Score++;
                 RotateFighter(Team.Alpha);
@@ -370,6 +386,9 @@ namespace Santana.Game.GameRules
                 var beatenTeam = champTeam == Team.Alpha ? Team.Beta : Team.Alpha;
                 var champ = champTeam == Team.Alpha ? PlayerAlphaBattle : PlayerBetaBattle;
                 var beaten = beatenTeam == Team.Alpha ? PlayerAlphaBattle : PlayerBetaBattle;
+                // Limpia el slot supporter antes del substate 16 (WIN): evita el crash de la restauracion
+                // FUN_018d6d20 sobre el visual roto del supporter. (Mask del bug de render del cliente.)
+                BroadcastFightersOnly();
                 Room.TeamManager[champTeam].Score++;
                 if (ValidPlayer(champ))
                     Stats(champ).RoundsWon++;
@@ -399,6 +418,14 @@ namespace Santana.Game.GameRules
             Trace($"BROADCAST GameEvent.NextRoundIn ms={(ulong)(HoldResultToReady + HoldReadyToGo).TotalMilliseconds}");
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
                 (ulong)(HoldResultToReady + HoldReadyToGo).TotalMilliseconds, 0, 0, ""));
+            // Re-broadcast del briefing tras cada resultado -> refresca el NUMERO GRANDE del score del equipo
+            // (sale de team.Score del briefing). Sin esto solo se actualizaba en el leader showdown y quedaba
+            // atrasado (sobre todo tras el medio tiempo).
+            Trace("BROADCAST GameBriefingInfoAck(isResult=false) (refresca el numero grande del score)");
+            Room.BroadcastBriefing(false);
+            // NO re-mandar el battle index aca: durante el win screen (substate 16) el cliente re-corre el
+            // placement con las posiciones nuevas -> los que cambian de posicion crashean re-ubicandose (el
+            // killer no cambia -> sobrevive). El nuevo orden va SOLO en EnterCountdown (proxima ronda).
             if (_inLeaderDuel)
             {
                 _inLeaderDuel = false;
@@ -602,12 +629,30 @@ namespace Santana.Game.GameRules
             foreach (var plr in Room.TeamManager.PlayersPlaying)
                 SendBattleIndex(plr);
         }
+        private void BroadcastFightersOnly()
+        {
+            var a = ValidPlayer(PlayerAlphaBattle)
+                ? new[] { new ArenaSyncDto(0u, PlayerAlphaBattle.Account.Id) } : Array.Empty<ArenaSyncDto>();
+            var b = ValidPlayer(PlayerBetaBattle)
+                ? new[] { new ArenaSyncDto(0u, PlayerBetaBattle.Account.Id) } : Array.Empty<ArenaSyncDto>();
+            // 3098 = roster completo (independiente del 3097 fighter-only) -> el roster no parpadea.
+            var aIds = Room.TeamManager[Team.Alpha].NoSpectatorPlayers.Select(x => x.Account.Id).ToArray();
+            var bIds = Room.TeamManager[Team.Beta].NoSpectatorPlayers.Select(x => x.Account.Id).ToArray();
+            Trace($"BROADCAST fighter-only 3097 + roster 3098 alpha=[{string.Join(",", aIds)}] beta=[{string.Join(",", bIds)}]");
+            foreach (var plr in Room.TeamManager.PlayersPlaying)
+            {
+                plr.SendAsync(new SyncFirstArenaBattleIdxMessage(aIds, bIds));
+                plr.SendAsync(new SyncArenaBattleIdxMessage(CurrentRound, a, b));
+            }
+        }
         private void SendBattleIndex(Player plr)
         {
             var alphaDtos = BuildSyncs(Team.Alpha, PlayerAlphaBattle);
             var betaDtos = BuildSyncs(Team.Beta, PlayerBetaBattle);
-            var alphaIds = alphaDtos.Select(d => d.AccountId).ToArray();
-            var betaIds = betaDtos.Select(d => d.AccountId).ToArray();
+            // El 3098 (SyncFirst) = ROSTER del equipo (todos los no-espectadores), INDEPENDIENTE del 3097
+            // (posiciones fighter). Asi el roster muestra 2/equipo aunque el 3097 mande solo el fighter.
+            var alphaIds = Room.TeamManager[Team.Alpha].NoSpectatorPlayers.Select(x => x.Account.Id).ToArray();
+            var betaIds = Room.TeamManager[Team.Beta].NoSpectatorPlayers.Select(x => x.Account.Id).ToArray();
             Trace($"-> {plr.Account.Nickname} Sync_First_Arena_Battle_Idx(3098) " +
                 $"alpha=[{string.Join(",", alphaIds)}] beta=[{string.Join(",", betaIds)}]");
             Trace($"-> {plr.Account.Nickname} Sync_Arena_Battle_Idx(3097) round={CurrentRound} " +
@@ -636,8 +681,10 @@ namespace Santana.Game.GameRules
                 : roster.OrderByDescending(p => p.Level).FirstOrDefault();
             if (fighter == null)
                 return Array.Empty<ArenaSyncDto>();
-            // Solo el fighter Status 0 el cliente ubica al resto del equipo solo, por membresia.
-            // Mandar un companiero con Status 1 lo traba en support sin armas y al rotar le mata el cliente.
+            // TEST (pedido del user): SOLO el fighter (Status 0), sin supporter. Los no-fighters no van a
+            // ninguna posicion -> caen a espectador (FUN_01191e60) = SIN stash de armas del supporter = SIN
+            // crash. Sirve para confirmar que la posicion supporter es la fuente del crash. Tradeoff: el
+            // roster muestra 1/equipo (el supporter no aparece en la base). Revertir a fighter+supporter luego.
             return new[] { new ArenaSyncDto(0u, fighter.Account.Id) };
         }
         private bool CanStartGame()

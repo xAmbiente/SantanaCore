@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SantanaLib.Serialization")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41554fbfc43121b524b17dd87cd436c83dd72715")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb984f586fe54f4dab42fa73d77fa47111850dc3")]
 [assembly: System.Reflection.AssemblyProductAttribute("SantanaLib.Serialization")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SantanaLib.Serialization")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

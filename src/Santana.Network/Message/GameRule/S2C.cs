@@ -839,6 +839,13 @@ namespace Santana.Network.Message.GameRule
     {
         public ulong[] Pickups { get; set; }
     }
+    [Packet(3085, PacketType.GameRule)]
+    public class SeizeBuffApplyAckMessage
+    {
+        public ulong Player { get; set; }
+        public uint DropSiteId { get; set; }
+        public uint BuffData { get; set; }
+    }
     [Packet(3074, PacketType.GameRule)]
     public class SeizeUpKeepScoreUpdateAckMessage
     {

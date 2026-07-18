@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SantanaLib.DotNetty.SimpleRmi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e7e74e5218f751e22e5d1e707b41e002d7ce8ccb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+436e5dc21d747df003837ab64538104a5c6085d1")]
 [assembly: System.Reflection.AssemblyProductAttribute("SantanaLib.DotNetty.SimpleRmi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SantanaLib.DotNetty.SimpleRmi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

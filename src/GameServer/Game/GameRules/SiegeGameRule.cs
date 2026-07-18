@@ -58,6 +58,7 @@ namespace Santana.Game.GameRules
         private uint _assistScore;
         private uint _captureScore;
         private uint _upkeepSeconds = 240;
+        private uint _dropSeq;
         public override GameRule GameRule => GameRule.Siege;
         public override Briefing Briefing { get; }
         public override bool CountMatch => true;
@@ -107,6 +108,29 @@ namespace Santana.Game.GameRules
                 return false;
             return true;
         }
+        public override void OnIntrudeCompleted(Player plr)
+        {
+            if (_sites != null)
+            {
+                var infos = new List<SeizeIntrudeInfoDto>();
+                ushort siteId = 1;
+                foreach (var site in _sites)
+                {
+                    infos.Add(new SeizeIntrudeInfoDto
+                    {
+                        Base = siteId,
+                        BaseOwner = (byte)site.Owner,
+                        Percentage = (ushort)(site.Owner != Team.Neutral ? 30000 : 0),
+                        PercentageGoal = 30000,
+                        Unk1 = 0
+                    });
+                    siteId++;
+                }
+                plr.SendAsync(new SeizeUpdateInfoByIntrudeAckMessage(infos.ToArray()));
+            }
+            if (_liveDrops.Count > 0)
+                plr.SendAsync(new SeizeDropBuffItemAckMessage { Pickups = _liveDrops.ToArray() });
+        }
         public override void Update(TimeSpan delta)
         {
             base.Update(delta);
@@ -145,9 +169,14 @@ namespace Santana.Game.GameRules
         }
         private List<ulong> ItemsGenerate(ushort Base)
         {
+            var rng = new Random();
             var generated = new List<ulong>();
-            foreach (var prefix in new[] { 0x5001, 0x5002, 0x5003, 0x5004, 0x5009 })
-                generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X4}{2:X2}", prefix, new Random().Next(4096, 50000), Base), 16));
+            foreach (var buff in new[] { (nibble: 1ul, amount: 30ul), (nibble: 2ul, amount: 2000ul), (nibble: 3ul, amount: 0ul), (nibble: 4ul, amount: 0ul), (nibble: 9ul, amount: 100ul) })
+            {
+                ulong inst = (ulong)(++_dropSeq & 0xFF);
+                ulong lowbits = ((ulong)rng.Next(1, 0xFFFF) << 8) | (Base & 0xFFul);
+                generated.Add((inst << 48) | (buff.amount << 36) | (buff.nibble << 24) | lowbits);
+            }
             return generated;
         }
         public void SpawnPickups(ushort _base, int count = 1)
@@ -168,15 +197,15 @@ namespace Santana.Game.GameRules
         {
             if (!_liveDrops.Contains(pickup))
                 return;
-            Room.Broadcast(new SeizeBuffItemGainAckMessage
-            {
-                PlayerID = plr.Account.Id,
-                PickupID = pickup
-            });
             _liveDrops.Remove(pickup);
             GetRecord(plr).ObtainedItems++;
             plr.stats.GetSiegeStats().ItemObtainScore++;
             var type = (int)((pickup >> 24) & 0xF);
+            Room.Broadcast(new SeizeBuffItemGainAckMessage
+            {
+                PickupID = plr.RoomInfo.PeerId,
+                PlayerID = pickup
+            });
             if (type == 3)
             {
                 plr.PEN += 5;

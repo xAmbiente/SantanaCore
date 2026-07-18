@@ -78,25 +78,21 @@ namespace Santana.Game.GameRules
 
         public IEnumerable<Player> PlayersHunted => PlayersAlive.Keys.Where(x => x != Chaser);
 
-        public override void OnRoomJoinCompleted(Player plr)
+        public override void OnBeforeIntrudeSpawn(Player plr)
         {
+            plr.RoomInfo.State = PlayerState.Dead;
+            PlayersAlive.TryRemove(plr, out _);
             if (ValidPlayer(Chaser))
-            {
-                plr?.SendAsync(new SlaughterChangeSlaughterAckMessage(Chaser.Account.Id,
-                    PlayersHunted.Select(x => x.Account.Id).ToArray()));
-            }
-
+                plr.SendAsync(new SlaughterChangeSlaughterAckMessage(Chaser.Account.Id,
+                    PlayersHunted.Where(x => x != plr).Select(x => x.Account.Id).ToArray()));
             if (ValidPlayer(ChaserTarget))
-            {
-                plr?.SendAsync(new SlaughterChangeBonusTargetAckMessage(ChaserTarget.Account.Id));
-            }
+                plr.SendAsync(new SlaughterChangeBonusTargetAckMessage(ChaserTarget.Account.Id));
         }
 
         public override void OnIntrudeCompleted(Player plr)
         {
             plr.RoomInfo.State = PlayerState.Dead;
             PlayersAlive.TryRemove(plr, out _);
-            plr.SendAsync(new ScoreSuicideAckMessage(plr.RoomInfo.PeerId, AttackAttribute.KillOneSelf));
         }
 
         public override void OnPlayerLeaving(Player plr)
@@ -530,11 +526,17 @@ namespace Santana.Game.GameRules
             CurrentChaserTarget = (rule.ChaserTarget?.Account.Id ?? 0);
 
             Unk8 = new List<ulong>();
-
-            Unk8.Add(CurrentChaser);
-
             Unk9 = rule.PlayersAlive.Where(x => !x.Value).Select(x => x.Key.Account.Id).ToList();
-            Unk6 = 1;
+
+            if (rule.Chaser != null)
+            {
+                Unk8.Add(CurrentChaser);
+                Unk6 = 1;
+            }
+            else
+            {
+                Unk6 = 0;
+            }
 
             w.Write(CurrentChaser);
             w.Write(CurrentChaserTarget);

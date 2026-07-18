@@ -609,6 +609,7 @@ namespace Santana.Network.Services
 
             if (phase == GameState.Playing)
             {
+                gamer.Room.GameRuleManager.GameRule.OnBeforeIntrudeSpawn(gamer);
                 session.SendAsync(new RoomGameStartAckMessage());
                 session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState, gamer.Room.SubGameState,
                     gamer.Room.RoundTime));
@@ -1521,9 +1522,13 @@ namespace Santana.Network.Services
           public void SeizeBuffItemGain(GameSession session, SeizeBuffItemGainReqMessage message)
           {
             var gamer = session.Player;
-            if (gamer.Room.GameRuleManager.GameRule.GameRule != GameRule.Siege)
+            var rule = gamer.Room?.GameRuleManager.GameRule;
+            if (rule == null)
                 return;
-            ((SiegeGameRule)gamer.Room.GameRuleManager.GameRule).OnPickup(gamer, message.Item, session);
+            if (rule.GameRule == GameRule.Siege)
+                ((SiegeGameRule)rule).OnPickup(gamer, message.Item, session);
+            else if (rule.GameRule == GameRule.Arcade)
+                gamer.Room.Broadcast(new SeizeBuffItemGainAckMessage { PickupID = gamer.RoomInfo.PeerId, PlayerID = message.Item });
         }
         #endregion
     }

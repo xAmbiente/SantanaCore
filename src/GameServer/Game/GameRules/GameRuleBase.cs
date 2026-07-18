@@ -65,6 +65,9 @@ namespace Santana.Game.GameRules
         public virtual void OnPlayerLeaving(Player plr)
         {
         }
+        public virtual void OnBeforeIntrudeSpawn(Player plr)
+        {
+        }
         public void RoomJoinCompleted(Player plr)
         {
             OnRoomJoinCompleted(plr);

@@ -10,6 +10,7 @@ namespace Santana.Game.GameRules
     using System.Linq;
     using SantanaLib.IO;
     using Santana.Network.Message.GameRule;
+    using Santana.Network.Data.GameRule;
     using Santana.Game;
     using Santana.Game.GameRules;
 
@@ -103,6 +104,35 @@ namespace Santana.Game.GameRules
                 plr.RoomInfo.State = PlayerState.Dead;
                 plr.SendAsync(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn, plr.Account.Id, (uint)_switchTimer.Seconds, 0, ""));
             }
+        }
+
+        public override void OnPlayerLeaving(Player plr)
+        {
+            if (!ScoreIsPlaying() || _awaitingNextChaser)
+                return;
+            if (Chaser == null || plr == Chaser)
+                return;
+            if (plr.RoomInfo.State != PlayerState.Alive)
+                return;
+
+            var record = GetRecord(Chaser);
+            if (plr == ChaserTarget)
+                record.BonusKills++;
+            else
+                record.Kills++;
+
+            Room.Broadcast(new ScoreKillAckMessage(new ScoreDto(Chaser.RoomInfo.PeerId, plr.RoomInfo.PeerId, AttackAttribute.KillOneSelf)));
+
+            PlayersAlive.TryRemove(plr, out _);
+            plr.RoomInfo.State = PlayerState.Dead;
+
+            if (plr == ChaserTarget)
+                ChaserTarget = null;
+
+            if (!ArePlayersAlive())
+                ChaserWin();
+
+            NextTarget();
         }
 
         public override void Initialize()

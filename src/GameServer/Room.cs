@@ -446,6 +446,7 @@ namespace Santana
             {
                 if (plr == null || plr.Room == null || plr.Room != this || !_players.ContainsKey(plr.Account?.Id ?? 0))
                     return;
+                GameRuleManager?.GameRule?.OnPlayerLeaving(plr);
                 if (roomLeaveReason == RoomLeaveReason.Kicked ||
                roomLeaveReason == RoomLeaveReason.ModeratorKick ||
                roomLeaveReason == RoomLeaveReason.VoteKick)

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SantanaLib")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+adf43a1c32987ef5ceeb21d404678bd215effc8e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eeb99f665a373e5ae9d4cde849d36a0f442db5eb")]
 [assembly: System.Reflection.AssemblyProductAttribute("SantanaLib")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SantanaLib")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

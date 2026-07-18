@@ -204,8 +204,6 @@ namespace Santana.Game.GameRules
                         PickupID = flag
                     });
                     site.PlayerWhoCapturedForUpKeep.RoomInfo.Team.Score++;
-                    GetRecord(site.PlayerWhoCapturedForUpKeep).CapturePoints++;
-                    site.PlayerWhoCapturedForUpKeep.stats.GetSiegeStats().CaptureScore++;
                 }
                 siteId++;
             }
@@ -394,31 +392,11 @@ namespace Santana.Game.GameRules
                 return;
             if (scoreTarget.PeerId.Category == PlayerCategory.Player)
             {
-                var targetTeam = target?.RoomInfo?.Team;
-                if (targetTeam != null)
+                if (target?.RoomInfo?.Team != null && killer?.RoomInfo?.Team != null)
                 {
-                    var killerTeam = killer?.RoomInfo?.Team;
-                    if (killerTeam != null)
-                    {
-                        GetRecord(killer).Kills++;
-                        killer.stats.GetSiegeStats().BattleScore += 2;
-                        if (assist != null)
-                        {
-                            GetRecord(assist).KillAssists++;
-                            assist.stats.GetSiegeStats().BattleScore++;
-                        }
-                    }
-                    GetRecord(target).Deaths++;
-                }
-                else if (targetTeam != null)
-                {
-                    GetRecord(killer).Kills++;
                     killer.stats.GetSiegeStats().BattleScore += 2;
                     if (assist != null)
-                    {
-                        GetRecord(assist).KillAssists++;
                         assist.stats.GetSiegeStats().BattleScore++;
-                    }
                 }
             }
         }
@@ -432,7 +410,7 @@ namespace Santana.Game.GameRules
                 var targetTeam = target?.RoomInfo?.Team;
                 if (targetTeam != null)
                 {
-                    GetPlayerRecord(target).Suicides++;
+                    GetRecord(target).Suicides++;
                 }
             }
         }

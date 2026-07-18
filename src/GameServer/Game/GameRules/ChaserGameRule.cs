@@ -94,16 +94,9 @@ namespace Santana.Game.GameRules
 
         public override void OnIntrudeCompleted(Player plr)
         {
-            if (_switchTimer.Seconds < 1)
-            {
-                plr.RoomInfo.State = PlayerState.Alive;
-                plr.SendAsync(new GameEventMessageAckMessage(GameEventMessage.StartGame, plr.Account.Id, (uint)_switchTimer.Seconds, 0, ""));
-            }
-            else
-            {
-                plr.RoomInfo.State = PlayerState.Dead;
-                plr.SendAsync(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn, plr.Account.Id, (uint)_switchTimer.Seconds, 0, ""));
-            }
+            plr.RoomInfo.State = PlayerState.Dead;
+            PlayersAlive.TryRemove(plr, out _);
+            plr.SendAsync(new ScoreSuicideAckMessage(plr.RoomInfo.PeerId, AttackAttribute.KillOneSelf));
         }
 
         public override void OnPlayerLeaving(Player plr)

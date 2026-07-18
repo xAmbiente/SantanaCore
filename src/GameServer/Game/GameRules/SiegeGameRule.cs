@@ -146,9 +146,8 @@ namespace Santana.Game.GameRules
         private List<ulong> ItemsGenerate(ushort Base)
         {
             var generated = new List<ulong>();
-            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0x5003, new Random().Next(1000, 50000), Base), 16));
-            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0xC8002, new Random().Next(1000, 50000), Base), 16));
-            generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X2}{2:X2}", 0x5004, new Random().Next(1000, 50000), Base), 16));
+            foreach (var prefix in new[] { 0x5001, 0x5002, 0x5003, 0x5004, 0x5009 })
+                generated.Add(Convert.ToUInt64(string.Format("{0:X2}{1:X4}{2:X2}", prefix, new Random().Next(4096, 50000), Base), 16));
             return generated;
         }
         public void SpawnPickups(ushort _base, int count = 1)
@@ -177,15 +176,18 @@ namespace Santana.Game.GameRules
             _liveDrops.Remove(pickup);
             GetRecord(plr).ObtainedItems++;
             plr.stats.GetSiegeStats().ItemObtainScore++;
-            if (pickup.ToString().StartsWith("34365"))
+            var type = (int)((pickup >> 24) & 0xF);
+            if (type == 3)
+            {
                 plr.PEN += 5;
-            plr.Session.Player.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, session.Player.Account.Id, "System",
-        $"You have Earned 5 PEN"));
-            if (pickup.ToString().StartsWith("34367"))
+                plr.Session.SendAsync(new MoneyRefreshCashInfoAckMessage(plr.PEN, plr.AP));
+                plr.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, plr.Account.Id, "System", "You have Earned 5 PEN"));
+            }
+            else if (type == 4)
+            {
                 plr.TotalExperience += 5;
-            plr.Session.Player.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, session.Player.Account.Id, "System",
-                    $"You have Earned 5 Exp"));
-            plr.Session.SendAsync(new MoneyRefreshCashInfoAckMessage(plr.PEN, plr.AP));
+                plr.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, plr.Account.Id, "System", "You have Earned 5 Exp"));
+            }
         }
         private async Task Worker(TimeSpan delta)
         {

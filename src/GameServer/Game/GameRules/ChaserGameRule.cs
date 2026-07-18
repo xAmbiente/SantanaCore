@@ -270,12 +270,15 @@ namespace Santana.Game.GameRules
                 if (scoreTarget.PeerId.Category == PlayerCategory.Player)
                 {
                     var record = GetRecord(killer);
-                    record.Kills++;
 
                     PlayersAlive.TryRemove(target, out _);
 
                     if (killer == Chaser && target == ChaserTarget)
+                    {
+                        if (record.Kills > 0)
+                            record.Kills--;
                         record.BonusKills++;
+                    }
 
                     if (target != Chaser)
                         target.RoomInfo.State = PlayerState.Dead;
@@ -316,10 +319,11 @@ namespace Santana.Game.GameRules
                     else
                     {
                         var record = GetRecord(Chaser);
-                        record.Kills++;
 
                         if (plr == ChaserTarget)
                             record.BonusKills++;
+                        else
+                            record.Kills++;
                     }
 
                     if (!ArePlayersAlive())

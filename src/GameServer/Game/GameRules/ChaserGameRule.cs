@@ -88,6 +88,16 @@ namespace Santana.Game.GameRules
                     PlayersHunted.Where(x => x != plr).Select(x => x.Account.Id).ToArray()));
             if (ValidPlayer(ChaserTarget))
                 plr.SendAsync(new SlaughterChangeBonusTargetAckMessage(ChaserTarget.Account.Id));
+
+            if (!Config.Instance.Game.ChaserIntruderOnKill)
+            {
+                plr.RoomInfo.Mode = PlayerGameMode.Spectate;
+                plr.RoomInfo.State = PlayerState.Spectating;
+                _forcedSpectators[plr] = true;
+                Room.Broadcast(new RoomPlayModeChangeAckMessage(plr.Account.Id, PlayerGameMode.Spectate));
+                return;
+            }
+
             KillIntruder(plr);
         }
 
@@ -99,8 +109,14 @@ namespace Santana.Game.GameRules
 
         // El intruder spawnea igual (el countdown es client-side); apenas aparece su actor le
         // inyectamos dano P2P letal via RelayServer -> queda en death-cam nativo hasta el proximo round.
+        private readonly ConcurrentDictionary<Player, bool> _scriptedDeaths = new ConcurrentDictionary<Player, bool>();
+
+        // Intruders parked as spectators; they rejoin the match when the next round starts.
+        private readonly ConcurrentDictionary<Player, bool> _forcedSpectators = new ConcurrentDictionary<Player, bool>();
+
         private void KillIntruder(Player intruder)
         {
+            _scriptedDeaths[intruder] = true;
             Task.Run(async () =>
             {
                 await Task.Delay(2000);
@@ -122,7 +138,8 @@ namespace Santana.Game.GameRules
                     source.Account.Id,
                     (ushort)(PeerId)intruder.RoomInfo.PeerId,
                     (ushort)(PeerId)source.RoomInfo.PeerId,
-                    3));
+                    3,
+                    0));
             });
         }
 
@@ -310,6 +327,14 @@ namespace Santana.Game.GameRules
         public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute,
             LongPeerId scoreTarget, LongPeerId scoreKiller, LongPeerId scoreAssist)
         {
+            // La muerte del intruder es inyectada por nosotros: se reporta como suicidio para que
+            // el killfeed no le acredite el kill al chaser. Solo aplica en modo kill.
+            if (Config.Instance.Game.ChaserIntruderOnKill && target != null && _scriptedDeaths.TryRemove(target, out _))
+            {
+                OnScoreSuicide(target, target.RoomInfo.PeerId, AttackAttribute.KillOneSelf);
+                return;
+            }
+
             if (!_awaitingNextChaser)
             {
                 base.OnScoreKill(killer, assist, target, attackAttribute, scoreTarget, scoreKiller, scoreAssist);
@@ -430,6 +455,16 @@ namespace Santana.Game.GameRules
             var remaining = Room.Options.TimeLimit - RoundTime;
             if (remaining <= TimeSpan.FromSeconds(10))
                 return;
+
+            foreach (var spectator in _forcedSpectators.Keys)
+            {
+                _forcedSpectators.TryRemove(spectator, out _);
+                if (spectator.Room != Room)
+                    continue;
+                spectator.RoomInfo.Mode = PlayerGameMode.Normal;
+                Room.Broadcast(new RoomPlayModeChangeAckMessage(spectator.Account.Id, PlayerGameMode.Normal));
+                spectator.Session?.SendAsync(new RoomGameStartAckMessage());
+            }
 
 
             _huntDuration = Room.TeamManager.PlayersPlaying.Count() < 7

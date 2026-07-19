@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AuthServer.ServiceModel")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Latest_Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2026.7.7.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+44c12d8ed459103f44f67807e041d509f143e5ee")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98ba3b3812796068d7c10e9fa7afcb3081a81407")]
 [assembly: System.Reflection.AssemblyProductAttribute("AuthServer.ServiceModel")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AuthServer.ServiceModel")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2026.7.7.0")]

@@ -138,6 +138,7 @@ namespace Santana
         public GameSettings()
         {
             EnableTutorial = true;
+            ChaserIntruderOnKill = true;
             MaxLevel = 100;
             StartLevel = 0;
             StartPEN = 10000;
@@ -154,6 +155,11 @@ namespace Santana
             WarfareExpRates = new WarfareExperienceRates();
         }
         [JsonProperty("enable_tutorial")] public bool EnableTutorial { get; set; }
+
+        // true = the intruder joins and is killed instantly, landing in the native death cam
+        // false = the intruder joins as a room spectator instead
+        [JsonProperty("chaser_intruder_on_kill")]
+        public bool ChaserIntruderOnKill { get; set; }
         [JsonProperty("max_level")] public byte MaxLevel { get; set; }
         [JsonProperty("start_level")] public byte StartLevel { get; set; }
         [JsonProperty("start_pen")] public int StartPEN { get; set; }

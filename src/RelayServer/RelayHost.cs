@@ -161,9 +161,11 @@ namespace Santana.Relay
         // GameTime del golpe real capturado; se incrementa por golpe para no duplicar.
         private const uint BaseGameTime = 0x00D48BB7;
 
-        private static byte[] BuildDamageFrame(ushort targetPeerId, ushort sourcePeerId, uint gameTime)
+        private static byte[] BuildDamageFrame(ushort targetPeerId, ushort sourcePeerId, uint gameTime, byte icon)
         {
             var inner = (byte[])DamageTemplate.Clone();
+            if (icon != 0)
+                inner[3] = icon;
             inner[1] = (byte)(targetPeerId & 0xFF);
             inner[2] = (byte)(targetPeerId >> 8);
             inner[4] = (byte)(gameTime & 0xFF);
@@ -217,7 +219,7 @@ namespace Santana.Relay
             for (var i = 0; i < hits; i++)
             {
                 var frameNo = ProudNetSrc.RelayFrameTracker.Next(source.Session.HostId, target.Session.HostId);
-                var frame = BuildDamageFrame(targetPeer, sourcePeer, ProudNetSrc.RelayFrameTracker.GameTimeNow(BaseGameTime) + (uint)(i * 60));
+                var frame = BuildDamageFrame(targetPeer, sourcePeer, ProudNetSrc.RelayFrameTracker.GameTimeNow(BaseGameTime) + (uint)(i * 60), message.Icon);
                 target.Session.SendP2PRelayReliable(source.Session.HostId, frameNo, frame);
                 await Task.Delay(80);
             }

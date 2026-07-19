@@ -75,10 +75,12 @@ namespace Santana.Ipc
         public ushort TargetPeerId { get; set; }
         public ushort SourcePeerId { get; set; }
         public int Hits { get; set; }
+        public byte Icon { get; set; }
 
         public RelayKillPlayerMessage() { }
-        public RelayKillPlayerMessage(ulong targetAccountId, ulong sourceAccountId, ushort targetPeerId, ushort sourcePeerId, int hits)
+        public RelayKillPlayerMessage(ulong targetAccountId, ulong sourceAccountId, ushort targetPeerId, ushort sourcePeerId, int hits, byte icon)
         {
+            Icon = icon;
             TargetAccountId = targetAccountId;
             SourceAccountId = sourceAccountId;
             TargetPeerId = targetPeerId;

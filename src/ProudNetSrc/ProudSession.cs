@@ -135,7 +135,7 @@ namespace ProudNetSrc
 
             try
             {
-                var n = false ? (message?.GetType().Name ?? "null") : null;
+                var n = message?.GetType().Name;
                 if (n != null &&
                     n.IndexOf("TimeSync", StringComparison.Ordinal) < 0 &&
                     n.IndexOf("Pong", StringComparison.Ordinal) < 0 &&
@@ -145,7 +145,7 @@ namespace ProudNetSrc
                     n.IndexOf("P2P", StringComparison.Ordinal) < 0 &&
                     n.IndexOf("RecycleComplete", StringComparison.Ordinal) < 0)
                 {
-                    Console.WriteLine($">> queued {n} toward peer {HostId}");
+                    Console.WriteLine($"[PKT] {n} -> peer {HostId}");
                 }
             }
             catch

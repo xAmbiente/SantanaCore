@@ -846,12 +846,16 @@ namespace Santana
                 plr.stats.OnJoin(RoomManager.GameRuleFactory.Get(Options.GameRule, this));
                 plr.RoomInfo.IsReady = false;
             }
-            GameRuleManager.MapInfo = GameServer.Instance.ResourceCache.GetMaps()[Options.MapId];
-            GameRuleManager.GameRule = RoomManager.GameRuleFactory.Get(Options.GameRule, this);
+            // El cliente tiene que saber el modo nuevo ANTES de recibir nada armado con el:
+            // asignar GameRuleManager.GameRule dispara el briefing, y cada modo lo serializa con
+            // un largo distinto. Si llega primero, el cliente lo lee con el layout viejo y crashea.
             var changeRuleAck = Options.Map<RoomCreationOptions, ChangeRuleDto2>();
             if (Options.GameRule == GameRule.Arcade)
                 changeRuleAck.PlayerLimit = ArcadePlayerLimitToClient(Options.PlayerLimit);
             Broadcast(new RoomChangeRuleNotifyAck2Message(changeRuleAck));
+
+            GameRuleManager.MapInfo = GameServer.Instance.ResourceCache.GetMaps()[Options.MapId];
+            GameRuleManager.GameRule = RoomManager.GameRuleFactory.Get(Options.GameRule, this);
         }
         private Player GetPlayerWithLowestPing()
         {
@@ -867,6 +871,12 @@ namespace Santana
             GameRuleManager.GameRule.StateMachine.OnTransitioned(t => OnStateChanged());
             try
             {
+                // Primero el record del modo nuevo: si se rearman los equipos con el record viejo
+                // todavia puesto, cualquier briefing que salga en el medio se serializa con el
+                // layout del modo anterior y el cliente lo lee mal.
+                foreach (var plr in Players.Values)
+                    plr.RoomInfo.Stats = GameRuleManager.GameRule.GetPlayerRecord(plr);
+
                 if (TeamManager.ContainsKey(Team.Alpha))
                 {
                     foreach (var plrI in _roomChangeAlphaPlayers)
@@ -1007,12 +1017,22 @@ namespace Santana
             if (plr == null || plr.Room == null)
                 return;
             var gameRule = GameRuleManager.GameRule;
-            plr.SendAsync(new GameBriefingInfoAckMessage(isResult, false, gameRule.Briefing.SerializeDataToArray(isResult)));
+            var data = gameRule.Briefing.SerializeDataToArray(isResult);
+            System.Console.WriteLine($"[BRIEFING] send rule={gameRule.GameRule} players={Players.Count} record={plr.RoomInfo.Stats?.GetType().Name} bytes={data.Length}");
+            plr.SendAsync(new GameBriefingInfoAckMessage(isResult, false, data));
         }
         public void BroadcastBriefing(bool isResult = false)
         {
+            // Durante un cambio de reglas el cliente todavia parsea con el layout del modo viejo.
+            // El briefing de Chaser es el mas grande (440 bytes con 2 jugadores contra ~282 del
+            // resto), asi que al salir de Chaser el cliente lee fuera del buffer y crashea.
+            if (IsChangingRules)
+                return;
+
             var gameRule = GameRuleManager.GameRule;
-            Broadcast(new GameBriefingInfoAckMessage(isResult, false, gameRule.Briefing.SerializeDataToArray(isResult)));
+            var data = gameRule.Briefing.SerializeDataToArray(isResult);
+            System.Console.WriteLine($"[BRIEFING] cast rule={gameRule.GameRule} players={Players.Count} bytes={data.Length}");
+            Broadcast(new GameBriefingInfoAckMessage(isResult, false, data));
         }
         #endregion
     }

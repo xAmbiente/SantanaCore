@@ -200,6 +200,12 @@ namespace ProudNetSrc
             return SendUdpIfAvailableAsync(new Serialization.Messages.Core.UnreliableRelay2Message(sourceHostId, data));
         }
 
+        public Task SendP2PRelayReliable(uint sourceHostId, uint frameNumber, byte[] data)
+        {
+            return SendAsync(new Serialization.Messages.Core.ReliableRelay2Message(
+                new Serialization.RelayDestinationDto(sourceHostId, frameNumber), data));
+        }
+
         protected virtual Task CloseInternalAsync()
         {
             return Task.CompletedTask;

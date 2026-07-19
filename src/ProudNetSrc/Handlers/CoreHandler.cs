@@ -124,17 +124,50 @@ namespace ProudNetSrc.Handlers
       target?.SendAsync(new ReliableRelay2Message(new RelayDestinationDto(session.HostId, message.Destination.FrameNumber), message.Data));
     }
 
+    private static void LogGameP2P(ProudSession session, byte[] data)
+    {
+      if (data == null || data.Length < 9 || data[0] != 0x13 || data[1] != 0x57)
+        return;
+      var prefix = data[2];
+      if (prefix != 1 && prefix != 2 && prefix != 4)
+        return;
+      var coreIdx = 3 + prefix;
+      if (coreIdx + 2 >= data.Length || data[coreIdx] != 1)
+        return;
+      var userOp = data[coreIdx + 1] | (data[coreIdx + 2] << 8);
+      if (userOp != 0x4E39)
+        return;
+      System.Console.WriteLine($"[P2P-GAME] from={session.HostId} len={data.Length} hex={System.BitConverter.ToString(data)}");
+
+      // contenedor crudo con prefix 1: el inner arranca en coreIdx+6; subOp 05 = DamageInfo
+      if (data[coreIdx + 3] != 0 || prefix != 1)
+        return;
+      var innerIdx = coreIdx + 6;
+      if (innerIdx + 8 >= data.Length)
+        return;
+
+      // 0x05 DamageInfo: GameTime en +4. 0x2A AbilityChangeSync: peer del emisor en +3.
+      if (data[innerIdx] == 0x05)
+        RelayFrameTracker.ObserveGameTime(BitConverter.ToUInt32(data, innerIdx + 4));
+      else if (data[innerIdx] == 0x2A)
+        RelayFrameTracker.ObservePeer(session.HostId, BitConverter.ToUInt16(data, innerIdx + 3));
+    }
+
     [MessageHandler(typeof(ReliableRelay1Message))]
     public void ReliableRelayHandler(ProudSession session, ReliableRelay1Message message)
     {
       if (session.P2PGroup == null)
         return;
 
+      LogGameP2P(session, message.Data);
+
       foreach (var destination in message.Destination.Where(d => d.HostId != session.HostId))
       {
         if (session.P2PGroup == null) continue;
 
         if (!session.P2PGroup.Members.ContainsKey(destination.HostId)) continue;
+
+        RelayFrameTracker.Observe(session.HostId, destination.HostId, destination.FrameNumber);
 
         var target = _server.Sessions.GetValueOrDefault(destination.HostId);
         target?.SendAsync(new ReliableRelay2Message(new RelayDestinationDto(session.HostId, destination.FrameNumber), message.Data));

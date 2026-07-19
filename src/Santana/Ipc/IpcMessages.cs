@@ -67,4 +67,23 @@ namespace Santana.Ipc
         public RelayServerNotifyP2PMessage() { }
         public RelayServerNotifyP2PMessage(uint roomId) { RoomId = roomId; }
     }
+
+    public class RelayKillPlayerMessage
+    {
+        public ulong TargetAccountId { get; set; }
+        public ulong SourceAccountId { get; set; }
+        public ushort TargetPeerId { get; set; }
+        public ushort SourcePeerId { get; set; }
+        public int Hits { get; set; }
+
+        public RelayKillPlayerMessage() { }
+        public RelayKillPlayerMessage(ulong targetAccountId, ulong sourceAccountId, ushort targetPeerId, ushort sourcePeerId, int hits)
+        {
+            TargetAccountId = targetAccountId;
+            SourceAccountId = sourceAccountId;
+            TargetPeerId = targetPeerId;
+            SourcePeerId = sourcePeerId;
+            Hits = hits;
+        }
+    }
 }

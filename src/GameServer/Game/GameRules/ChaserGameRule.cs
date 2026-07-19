@@ -103,7 +103,7 @@ namespace Santana.Game.GameRules
         {
             Task.Run(async () =>
             {
-                await Task.Delay(4500);
+                await Task.Delay(2000);
                 System.Console.WriteLine($"[KILL-INTRUDER] check acc={intruder.Account.Id} playing={ScoreIsPlaying()} sameRoom={intruder.Room == Room} state={intruder.RoomInfo.State} chaserValido={ValidPlayer(Chaser)} vivos={PlayersAlive.Count}");
                 if (!ScoreIsPlaying() || intruder.Room != Room)
                 {

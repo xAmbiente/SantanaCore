@@ -2,7 +2,6 @@ namespace ProudNetSrc
 {
     using System.Collections.Concurrent;
 
-    // ponytail: dict global sin expiry; las entradas mueren con el proceso.
     public static class RelayFrameTracker
     {
         private static readonly ConcurrentDictionary<(uint From, uint To), uint> Last =

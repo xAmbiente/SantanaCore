@@ -102,6 +102,10 @@ namespace Santana.Game.GameRules
                 BetaWins = 0;
                 CurrentRound = (int)Room.TeamManager.Sum(entry => entry.Value.Score);
                 PlayersCaptain.Clear();
+                _betweenRounds = true;
+                _sinceRoundStarted = TimeSpan.Zero;
+                _sinceRoundEnded = TimeSpan.Zero;
+                _roundStartTime = default;
             }
             catch { }
         }

@@ -337,7 +337,7 @@ namespace Santana.Game.GameRules
                     case GameRuleState.Result:
                         var winnerList = new List<Player>();
                         var byScore = Room.TeamManager.PlayersPlaying.OrderBy(x => x.RoomInfo.Stats.TotalScore).ToList();
-                        foreach (var winner in Room.GameRuleManager.GameRule.Briefing.GetWinnerTeam().Keys)
+                        foreach (var winner in Room.GameRuleManager.GameRule.Briefing.GetWinnerTeam().PlayersPlaying)
                         {
                             if (CountMatch)
                             {

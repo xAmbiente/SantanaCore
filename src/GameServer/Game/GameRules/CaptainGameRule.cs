@@ -256,15 +256,18 @@ namespace Santana.Game.GameRules
             }
             else
             {
-                var scoreByTeam = new Dictionary<Team, uint>();
-                foreach (var team in Room.TeamManager.Values)
-                {
-                    var teamScore = team.PlayersPlaying.Sum(plr => plr.RoomInfo.Stats.TotalScore);
-                    scoreByTeam.Add(team.Team, (uint)teamScore);
-                }
+                var alpha = Room.TeamManager[Team.Alpha];
+                var beta = Room.TeamManager[Team.Beta];
 
-                var bestScore = scoreByTeam.Values.Max();
-                roundWinner = Room.TeamManager.Values.FirstOrDefault(team => scoreByTeam[team.Team] == bestScore);
+                var alphaScore = (uint)alpha.PlayersPlaying.Sum(plr => plr.RoomInfo.Stats.TotalScore);
+                var betaScore = (uint)beta.PlayersPlaying.Sum(plr => plr.RoomInfo.Stats.TotalScore);
+
+                if (alphaScore > betaScore)
+                    roundWinner = alpha;
+                else if (betaScore > alphaScore)
+                    roundWinner = beta;
+                else
+                    roundWinner = null;
             }
 
             if (roundWinner?.Team == Team.Alpha)
@@ -277,7 +280,7 @@ namespace Santana.Game.GameRules
                 BetaWins++;
             }
 
-            if (roundWinner?.Team != Team.Neutral)
+            if (roundWinner != null && roundWinner.Team != Team.Neutral)
             {
                 roundWinner.Score++;
                 foreach (var plr in roundWinner.PlayersPlaying)
@@ -288,12 +291,14 @@ namespace Santana.Game.GameRules
                     Unk1 = 3,
                     Unk2 = roundWinner.Team
                 });
+
+                Room.BroadcastBriefing();
             }
 
-            if (Room.TeamManager.Values.Any(team => team.Score > Room.Options.ScoreLimit))
+            if (Room.TeamManager.Values.Any(team => team.Score >= Room.Options.ScoreLimit))
                 return;
 
-            if (CurrentRound - 1 > Room.Options.TimeLimit.Minutes)
+            if (CurrentRound - 1 >= Room.Options.TimeLimit.Minutes)
                 return;
 
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
@@ -308,6 +313,16 @@ namespace Santana.Game.GameRules
         private static CaptainPlayerRecord GetRecord(Player plr)
         {
             return (CaptainPlayerRecord)plr.RoomInfo.Stats;
+        }
+
+        public override void OnScoreHeal(Player plr, LongPeerId scoreTarget)
+        {
+            base.OnScoreHeal(plr, scoreTarget);
+
+            if (!ScoreIsPlaying())
+                return;
+
+            GetRecord(plr).HealPoints++;
         }
 
         public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute,
@@ -352,10 +367,12 @@ namespace Santana.Game.GameRules
             if (scoreTarget.PeerId.Category == PlayerCategory.Player)
             {
                 var victimTeam = target?.RoomInfo?.Team;
-                if (victimTeam != null && PlayersCaptain.TryRemove(target, out _))
+                if (victimTeam != null)
                 {
-                    GetRecord(target).IsCaptain = false;
-                    GetPlayerRecord(target).Suicides++;
+                    if (PlayersCaptain.TryRemove(target, out _))
+                        GetRecord(target).IsCaptain = false;
+
+                    GetRecord(target).Suicides++;
                 }
             }
         }
@@ -391,7 +408,15 @@ namespace Santana.Game.GameRules
         {
         }
 
-        public override uint TotalScore => 5 * (WinRound + CaptainKills) + 2 * Kills + KillAssists + HealPoints - Suicides;
+        public override uint TotalScore
+        {
+            get
+            {
+                var earned = 5 * (WinRound + CaptainKills) + CaptainKillAssists +
+                             2 * Kills + KillAssists + HealPoints;
+                return Suicides >= earned ? 0 : earned - Suicides;
+            }
+        }
         public uint CaptainKills { get; set; }
         public uint CaptainKillAssists { get; set; }
         public uint HealPoints { get; set; }
@@ -407,8 +432,8 @@ namespace Santana.Game.GameRules
             w.Write(0);
             w.Write(0);
             w.Write(0);
-            w.Write(CaptainKills);
             w.Write(CaptainKillAssists);
+            w.Write(CaptainKills);
             w.Write(WinRound);
             w.Write(Deaths);
             w.Write(IsCaptain);

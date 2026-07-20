@@ -407,6 +407,7 @@ namespace Santana.Network.Services
                 try
                 {
                     gameRoom.TeamManager.Join(moving);
+                    gamer.Room.BroadcastBriefing();
                 }
                 catch (TeamLimitReachedException)
                 {

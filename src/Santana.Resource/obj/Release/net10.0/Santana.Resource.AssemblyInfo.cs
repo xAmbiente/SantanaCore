@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Santana.Resource")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2026.7.7.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+07eb828dc3d2088490307e0e74ce56adc9730807")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2238d3d5e375107be274a135779fe08d6f7ead11")]
 [assembly: System.Reflection.AssemblyProductAttribute("Santana.Resource")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Santana.Resource")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2026.7.7.0")]

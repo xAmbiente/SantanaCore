@@ -54,6 +54,10 @@ namespace Santana.Game.GameRules
         private readonly List<SiegeItemDto> _pendingItems = new List<SiegeItemDto>();
         private readonly List<ulong> _liveDrops = new List<ulong>();
         public TaskLoop _worker;
+        public TaskLoop _dropWorker;
+        private const int DropIntervalSeconds = 20;
+        private const int DropsPerSite = 2;
+        private const int MaxLiveDropsPerSite = 6;
         private uint _captureFlag;
         private uint _assistScore;
         private uint _captureScore;
@@ -74,12 +78,15 @@ namespace Santana.Game.GameRules
             Room.TeamManager.Add(Team.Beta, perTeamPlayers, perTeamSpectators);
             _sites = new List<SiegeBaseDto> { _siteAlpha, _siteBeta, _siteGamma };
             _worker = new TaskLoop(TimeSpan.FromSeconds(_upkeepSeconds), Worker);
+            _dropWorker = new TaskLoop(TimeSpan.FromSeconds(DropIntervalSeconds), DropWorker);
             base.Initialize();
         }
         public override void Cleanup()
         {
             if (_worker != null)
                 _worker.Stop();
+            if (_dropWorker != null)
+                _dropWorker.Stop();
             Room.TeamManager.Remove(Team.Alpha);
             Room.TeamManager.Remove(Team.Beta);
             base.Cleanup();
@@ -160,6 +167,10 @@ namespace Santana.Game.GameRules
                         _worker.Start();
                     if (Room.GameState == GameState.Result && _worker.IsRunning)
                         _worker.Stop();
+                    if (Room.GameState == GameState.Playing && !_dropWorker.IsRunning)
+                        _dropWorker.Start();
+                    if (Room.GameState == GameState.Result && _dropWorker.IsRunning)
+                        _dropWorker.Stop();
                 }
             }
             catch (Exception e)
@@ -224,6 +235,27 @@ namespace Santana.Game.GameRules
                 plr.RoomInfo.Team.Score++;
             }
         }
+        // Los drops van en su propio loop: el upkeep corre cada _upkeepSeconds y no queremos
+        // atar la frecuencia de las fichas al ritmo con que se reparten los puntos.
+        private async Task DropWorker(TimeSpan delta)
+        {
+            if (_sites == null)
+                return;
+            ushort siteId = 1;
+            foreach (var site in _sites)
+            {
+                if (site.Owner != Team.Neutral)
+                {
+                    // El id del drop lleva la base en el byte bajo (ver ItemsGenerate), asi se
+                    // cuenta cuantas quedan sin recoger en este sitio.
+                    var live = _liveDrops.Count(d => (d & 0xFF) == siteId);
+                    if (live < MaxLiveDropsPerSite)
+                        SpawnPickups(siteId, Math.Min(DropsPerSite, MaxLiveDropsPerSite - live));
+                }
+                siteId++;
+            }
+            await Task.CompletedTask;
+        }
         private async Task Worker(TimeSpan delta)
         {
             if (RoundTime.Seconds < 15)
@@ -233,7 +265,6 @@ namespace Santana.Game.GameRules
             {
                 if (site.Owner != Team.Neutral)
                 {
-                    SpawnPickups(siteId);
                     ulong flag = Convert.ToUInt64(string.Format("{0:X2}{1:X2}", 0x100B0000, siteId), 16);
                     Room.Broadcast(new SeizeBuffItemGainAckMessage
                     {
@@ -241,7 +272,9 @@ namespace Santana.Game.GameRules
                         PickupID = flag
                     });
                     site.PlayerWhoCapturedForUpKeep.RoomInfo.Team.Score++;
-                    GetRecord(site.PlayerWhoCapturedForUpKeep).CapturePoints++;
+                    // NO sumar aca a CapturePoints: la columna Capture del cliente NO cuenta el
+                    // SeizeBuffItemGainAck del upkeep, asi que si lo metemos en el record queda
+                    // solo en la semilla y el que entra tarde ve +1 por cada tick.
                 }
                 siteId++;
             }
@@ -496,9 +529,11 @@ namespace Santana.Game.GameRules
             // mandando 1000 y con 6 briefings enviados, en pantalla se ven 6000). Como ademas
             // arma estos contadores con los acks en vivo, mandarlos a mitad de partida los suma
             // de nuevo a todos. Solo van con valor en el briefing de resultado final.
-            w.Write(isResult ? CapturePoints : 0);
-            w.Write(isResult ? CaptureAssists : 0);
-            w.Write(isResult ? ObtainedItems : 0);
+            var brief = Player?.Room?.GameRuleManager?.GameRule?.Briefing;
+            var totals = isResult || (brief != null && brief.IncludeTotals);
+            w.Write(totals ? CapturePoints : 0);
+            w.Write(totals ? CaptureAssists : 0);
+            w.Write(totals ? ObtainedItems : 0);
         }
         public override void Reset()
         {

@@ -54,6 +54,7 @@ namespace Santana
         private ConcurrentDictionary<ulong, object> _kickedPlayers = new ConcurrentDictionary<ulong, object>();
         private ConcurrentDictionary<ulong, Player> _players = new ConcurrentDictionary<ulong, Player>();
         public ConcurrentDictionary<Player, Team> _blockplayers = new ConcurrentDictionary<Player, Team>();
+        private readonly HashSet<ulong> _briefingSeeded = new HashSet<ulong>();
         private Dictionary<Player, PlayerGameMode> _roomChangePlayers = new Dictionary<Player, PlayerGameMode>();
         private Dictionary<Player, PlayerGameMode> _roomChangeAlphaPlayers = new Dictionary<Player, PlayerGameMode>();
         private Dictionary<Player, PlayerGameMode> _roomChangeBetaPlayers = new Dictionary<Player, PlayerGameMode>();
@@ -453,6 +454,8 @@ namespace Santana
                     _kickedPlayers.TryAdd(plr.Account.Id, null);
                 Broadcast(new RoomLeavePlayerAckMessage(plr.Account.Id, plr.Account.Nickname, roomLeaveReason));
                 _players.Remove(plr.Account.Id, out _);
+                // Si vuelve a entrar hay que volver a sembrarle los totales del briefing.
+                _briefingSeeded.Remove(plr.Account.Id);
                 TeamManager.Leave(plr);
                 RefreshClubInfoSnapshot();
                 RefreshClanRoomName();
@@ -1017,8 +1020,12 @@ namespace Santana
             if (plr == null || plr.Room == null)
                 return;
             var gameRule = GameRuleManager.GameRule;
+            // Primer briefing de este jugador -> lleva los totales acumulados. Los siguientes
+            // van en 0, porque el cliente los suma y volveria a duplicarlos.
+            gameRule.Briefing.IncludeTotals = _briefingSeeded.Add(plr.Account.Id);
             var data = gameRule.Briefing.SerializeDataToArray(isResult);
-            System.Console.WriteLine($"[BRIEFING] send rule={gameRule.GameRule} players={Players.Count} record={plr.RoomInfo.Stats?.GetType().Name} bytes={data.Length}");
+            System.Console.WriteLine($"[BRIEFING] -> acc={plr.Account.Id} semilla={gameRule.Briefing.IncludeTotals} isResult={isResult} bytes={data.Length}");
+            gameRule.Briefing.IncludeTotals = false;
             plr.SendAsync(new GameBriefingInfoAckMessage(isResult, false, data));
         }
         public void BroadcastBriefing(bool isResult = false)
@@ -1029,10 +1036,10 @@ namespace Santana
             if (IsChangingRules)
                 return;
 
-            var gameRule = GameRuleManager.GameRule;
-            var data = gameRule.Briefing.SerializeDataToArray(isResult);
-            System.Console.WriteLine($"[BRIEFING] cast rule={gameRule.GameRule} players={Players.Count} bytes={data.Length}");
-            Broadcast(new GameBriefingInfoAckMessage(isResult, false, data));
+            // Uno por jugador: cada quien tiene que recibir los totales solo en su primer
+            // briefing, asi que no se puede mandar un blob unico para todos.
+            foreach (var plr in Players.Values.ToList())
+                SendBriefing(plr, isResult);
         }
         #endregion
     }

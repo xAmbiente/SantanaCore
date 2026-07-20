@@ -846,7 +846,6 @@ namespace Santana
                 plr.stats.OnJoin(RoomManager.GameRuleFactory.Get(Options.GameRule, this));
                 plr.RoomInfo.IsReady = false;
             }
-            // El cliente tiene que saber el modo nuevo ANTES de recibir nada armado con el:
             // asignar GameRuleManager.GameRule dispara el briefing, y cada modo lo serializa con
             // un largo distinto. Si llega primero, el cliente lo lee con el layout viejo y crashea.
             var changeRuleAck = Options.Map<RoomCreationOptions, ChangeRuleDto2>();
@@ -1021,9 +1020,6 @@ namespace Santana
         }
         public void BroadcastBriefing(bool isResult = false)
         {
-            // Durante un cambio de reglas el cliente todavia parsea con el layout del modo viejo.
-            // El briefing de Chaser es el mas grande (440 bytes con 2 jugadores contra ~282 del
-            // resto), asi que al salir de Chaser el cliente lee fuera del buffer y crashea.
             if (IsChangingRules)
                 return;
 

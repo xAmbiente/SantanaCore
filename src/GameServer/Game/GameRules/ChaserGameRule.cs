@@ -125,7 +125,6 @@ namespace Santana.Game.GameRules
                     System.Console.WriteLine("[KILL-INTRUDER] abortado: no esta jugando o cambio de sala");
                     return;
                 }
-                // El cliente muestra "has been dominated" si el killer es el chaser, asi que el golpe
                 // sale de cualquier otro jugador vivo; el chaser es el ultimo recurso.
                 var source = PlayersAlive.Keys.FirstOrDefault(p => p != intruder && p != Chaser)
                              ?? ((ValidPlayer(Chaser) && Chaser != intruder) ? Chaser : null);

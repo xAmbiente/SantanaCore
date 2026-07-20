@@ -44,7 +44,7 @@ namespace Santana.Game
 
             if (GameRule.GameRule == Santana.GameRule.Siege)
             {
-                w.Write((uint)0);
+                w.Write(team.Score);
 
                 w.Write((byte)0);
                 w.Write((byte)0);

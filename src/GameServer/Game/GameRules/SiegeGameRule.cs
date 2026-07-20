@@ -171,7 +171,7 @@ namespace Santana.Game.GameRules
         {
             var rng = new Random();
             var generated = new List<ulong>();
-            foreach (var buff in new[] { (nibble: 1ul, amount: 30ul), (nibble: 2ul, amount: 2000ul), (nibble: 3ul, amount: 5ul), (nibble: 4ul, amount: 5ul), (nibble: 9ul, amount: 100ul) })
+            foreach (var buff in new[] { (nibble: 1ul, amount: 30ul), (nibble: 2ul, amount: 2000ul), (nibble: 3ul, amount: 5ul), (nibble: 4ul, amount: 5ul), (nibble: 9ul, amount: 100ul), (nibble: 0xBul, amount: 1ul) })
             {
                 ulong inst = (ulong)(++_dropSeq & 0xFF);
                 ulong lowbits = ((ulong)rng.Next(1, 0xFFFF) << 8) | (Base & 0xFFul);
@@ -216,6 +216,12 @@ namespace Santana.Game.GameRules
             {
                 plr.TotalExperience += 5;
                 plr.ChatSession.SendAsync(new MessageChatAckMessage(ChatType.Channel, plr.Account.Id, "System", "You have Earned 5 Exp"));
+            }
+            else if (type == 0xB)
+            {
+                // El verde de la bandera: +1 al score de la partida. Mismo nibble que usa el
+                // upkeep para su flag (0x100B0000 -> (>>24)&0xF == 0xB).
+                plr.RoomInfo.Team.Score++;
             }
         }
         private async Task Worker(TimeSpan delta)

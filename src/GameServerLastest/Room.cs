@@ -29,19 +29,9 @@ namespace Santana
     internal class Room : IDisposable
     {
         public static readonly ILogger Logger = Log.ForContext(Constants.SourceContextPropertyName, "GameRoomMgr");
-        internal static byte NormalizeArcadePlayerLimitFromClient(byte clientValue)
-        {
-            if (clientValue <= 1)
-                return (byte)(clientValue + 1);
-            return (byte)Math.Clamp((int)clientValue, 2, 4);
-        }
-        internal static byte ArcadePlayerLimitToClient(byte storedValue) =>
-            storedValue switch
-            {
-                1 => 0,
-                2 => 1,
-                _ => storedValue
-            };
+        internal static byte NormalizeArcadePlayerLimitFromClient(byte clientValue) =>
+            (byte)Math.Clamp((int)clientValue, 1, 4);
+        internal static byte ArcadePlayerLimitToClient(byte storedValue) => storedValue;
         internal byte GetWirePlayerLimit() =>
             Options.GameRule == GameRule.Arcade
                 ? ArcadePlayerLimitToClient(Options.PlayerLimit)
@@ -540,6 +530,11 @@ namespace Santana
         {
             if (Disposed || plr.Room != this || plr == Master)
                 return;
+            if (plr.RoomInfo.Team == null)
+            {
+                Leave(plr);
+                return;
+            }
             if (CustomRules(plr, false) == false)
                 return;
             if (IsChangingRules)

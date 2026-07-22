@@ -162,7 +162,6 @@ namespace Santana.Game.GameRules
             _queenDown = true;
             plr.RoomInfo.Team.Score++;
             GetRecord(plr).QueenKills++;
-            GetRecord(plr).Kills++;
             Room.Broadcast(new ScoreAIKillAckMessage(unk));
             var midMatch = TimeSpan.FromSeconds(Room.Options.TimeLimit.TotalSeconds / 2);
             var remainingToMid = midMatch - RoundTime;

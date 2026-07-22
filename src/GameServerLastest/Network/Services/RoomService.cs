@@ -559,8 +559,8 @@ namespace Santana.Network.Services
             }
             if (gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Chaser && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Captain && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.BattleRoyal)
             {
-                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
-                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
+                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
+                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
                 var alphaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Alpha);
                 var betaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Beta);
                 if ((alphaActive.Count() - alphaBenched.Count()) > betaActive.Count())

@@ -98,6 +98,7 @@ namespace Santana.Network
     .Add(new CollectBookTestCommand())
     .Add(new RecreateCollectBookCommand())
     .Add(new CombiTestCommand())
+    .Add(new ArcadeProbeCommand())
     .Add(new OnlineCommand())
     .Add(new OfflineCommand())
     .Add(new LoginStateCommand())

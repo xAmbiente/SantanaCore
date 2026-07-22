@@ -137,7 +137,6 @@ namespace ProudNetSrc.Handlers
       var userOp = data[coreIdx + 1] | (data[coreIdx + 2] << 8);
       if (userOp != 0x4E39)
         return;
-      System.Console.WriteLine($"[P2P-GAME] from={session.HostId} len={data.Length} hex={System.BitConverter.ToString(data)}");
 
       // contenedor crudo con prefix 1: el inner arranca en coreIdx+6; subOp 05 = DamageInfo
       if (data[coreIdx + 3] != 0 || prefix != 1)
@@ -153,6 +152,91 @@ namespace ProudNetSrc.Handlers
         RelayFrameTracker.ObservePeer(session.HostId, BitConverter.ToUInt16(data, innerIdx + 3));
     }
 
+    public static bool RewriteMonsterOwners = true;
+
+    private static void WriteLe(byte[] buf, int off, int count, int value)
+    {
+      for (var i = 0; i < count; i++)
+        buf[off + i] = (byte)(value >> (8 * i));
+    }
+
+    private static byte[] RepointDeadMonsterOwners(ProudSession session, byte[] data)
+    {
+      try
+      {
+        if (!RewriteMonsterOwners || data == null || data.Length < 250 || data[0] != 0x13 || data[1] != 0x57)
+          return null;
+        var prefix = data[2];
+        if (prefix != 1 && prefix != 2 && prefix != 4)
+          return null;
+        var core = 3 + prefix;
+        if (data[core] != 1 || (data[core + 1] | (data[core + 2] << 8)) != 0x4E3B)
+          return null;
+
+        var senderAcc = RelayFrameTracker.AccountOf(session.HostId);
+        var senderPeer = RelayFrameTracker.RefereePeerOf(senderAcc);
+        if (senderPeer == 0)
+          senderPeer = RelayFrameTracker.PeerOf(session.HostId, 0);
+        if (senderPeer == 0 || senderAcc == 0)
+          return null;
+
+        var p = core + 3;
+        var lenPrefix = data[p + 4];
+        var zlibStart = p + 5 + lenPrefix;
+        byte[] body;
+        using (var input = new MemoryStream(data, zlibStart, data.Length - zlibStart))
+        using (var zlib = new System.IO.Compression.ZLibStream(input, System.IO.Compression.CompressionMode.Decompress))
+        using (var output = new MemoryStream())
+        {
+          zlib.CopyTo(output);
+          body = output.ToArray();
+        }
+
+        var changed = false;
+        for (var i = 0; i + 8 <= body.Length; i++)
+        {
+          if (body[i + 4] != 0 || body[i + 5] != 0)
+            continue;
+          var peer = (ushort)(body[i + 6] | (body[i + 7] << 8));
+          var slot = (peer >> 3) & 0x1F;
+          if ((peer & 7) != 1 || slot < 3 || slot > 8 || (peer >> 8) > 8)
+            continue;
+          var acc = BitConverter.ToUInt32(body, i);
+          if (acc == 0 || peer == senderPeer)
+            continue;
+          WriteLe(body, i, 4, (int)senderAcc);
+          body[i + 6] = (byte)senderPeer;
+          body[i + 7] = (byte)(senderPeer >> 8);
+          changed = true;
+        }
+        if (!changed)
+          return null;
+
+        byte[] recompressed;
+        using (var output = new MemoryStream())
+        {
+          using (var zlib = new System.IO.Compression.ZLibStream(output, System.IO.Compression.CompressionLevel.Optimal, true))
+            zlib.Write(body, 0, body.Length);
+          recompressed = output.ToArray();
+        }
+
+        var frameLen = zlibStart + recompressed.Length;
+        if (recompressed.Length >= (1 << (8 * lenPrefix)) || frameLen - core >= (1 << (8 * prefix)))
+          return null;
+
+        var patched = new byte[frameLen];
+        Buffer.BlockCopy(data, 0, patched, 0, zlibStart);
+        Buffer.BlockCopy(recompressed, 0, patched, zlibStart, recompressed.Length);
+        WriteLe(patched, 3, prefix, frameLen - core);
+        WriteLe(patched, p + 5, lenPrefix, recompressed.Length);
+        return patched;
+      }
+      catch
+      {
+        return null;
+      }
+    }
+
     [MessageHandler(typeof(ReliableRelay1Message))]
     public void ReliableRelayHandler(ProudSession session, ReliableRelay1Message message)
     {
@@ -160,6 +244,9 @@ namespace ProudNetSrc.Handlers
         return;
 
       LogGameP2P(session, message.Data);
+      var patched = RepointDeadMonsterOwners(session, message.Data);
+      if (patched != null)
+        message.Data = patched;
 
       foreach (var destination in message.Destination.Where(d => d.HostId != session.HostId))
       {

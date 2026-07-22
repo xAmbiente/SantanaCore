@@ -42,6 +42,7 @@ namespace Santana
         private TimeSpan _hostUpdateTime = TimeSpan.FromSeconds(30);
         private TimeSpan _voteKickTime = TimeSpan.FromSeconds(10);
         private ConcurrentDictionary<ulong, object> _kickedPlayers = new ConcurrentDictionary<ulong, object>();
+        private readonly ConcurrentDictionary<ulong, byte> _peerIdSeq = new ConcurrentDictionary<ulong, byte>();
         private ConcurrentDictionary<ulong, Player> _players = new ConcurrentDictionary<ulong, Player>();
         public ConcurrentDictionary<Player, Team> _blockplayers = new ConcurrentDictionary<Player, Team>();
         private Dictionary<Player, PlayerGameMode> _roomChangePlayers = new Dictionary<Player, PlayerGameMode>();
@@ -144,6 +145,11 @@ namespace Santana
                         ChangeMasterIfNeeded(GetPlayerWithLowestPing(), true);
                         ChangeHostIfNeeded(GetPlayerWithLowestPing(), true);
                     }
+                }
+                if (!(Host?.IsLoggedIn() ?? true) || Host?.Room != this)
+                {
+                    if (TeamManager.Players.Any())
+                        ChangeHostIfNeeded(GetPlayerWithLowestPing(), true);
                 }
                 if (!TeamManager.NoSpectatorPlayers.Any() && TeamManager.Players.Any())
                 {
@@ -250,7 +256,8 @@ namespace Santana
                          byte id = 3;
                          while (Players.Values.Any(p => p.RoomInfo.Slot == id))
                              id++;
-                         plr.RoomInfo.PeerId = new LongPeerId(plr.Account.Id, new PeerId(0, id, PlayerCategory.Player));
+                         var entry = _peerIdSeq.AddOrUpdate(plr.Account.Id, (byte)0, (_, prev) => (byte)(prev + 1));
+                         plr.RoomInfo.PeerId = new LongPeerId(plr.Account.Id, new PeerId(entry, id, PlayerCategory.Player));
                          plr.RoomInfo.Slot = id;
                      }
                      plr.RoomInfo.Reset();
@@ -437,6 +444,15 @@ namespace Santana
                 if (plr == null || plr.Room == null || plr.Room != this || !_players.ContainsKey(plr.Account?.Id ?? 0))
                     return;
                 GameRuleManager?.GameRule?.OnPlayerLeaving(plr);
+                if (plr == Master || plr == Host)
+                {
+                    var successor = GetPlayerWithLowestPing(plr);
+                    if (successor != null)
+                    {
+                        ChangeMasterIfNeeded(successor, true);
+                        ChangeHostIfNeeded(successor, true);
+                    }
+                }
                 if (roomLeaveReason == RoomLeaveReason.Kicked ||
                roomLeaveReason == RoomLeaveReason.ModeratorKick ||
                roomLeaveReason == RoomLeaveReason.VoteKick)
@@ -606,7 +622,7 @@ namespace Santana
                 return false;
             if (Master == null)
                 force = true;
-            if (plr == Master || (Master?.IsLoggedIn() ?? false) && !force || !plr.IsLoggedIn())
+            if (plr == Master || (Master?.IsLoggedIn() ?? false) && Master?.Room == this && !force || !plr.IsLoggedIn())
                 return false;
             Master = plr;
             if (Master.RoomInfo.IsReady)
@@ -625,7 +641,7 @@ namespace Santana
                 return false;
             if (Host == null)
                 force = true;
-            if (Host == plr || (Host?.IsLoggedIn() ?? false) && !force || !plr.IsLoggedIn())
+            if (Host == plr || (Host?.IsLoggedIn() ?? false) && Host?.Room == this && !force || !plr.IsLoggedIn())
                 return false;
             Logger.ForAccount(plr).Information("Room {roomId}: relay duty reassigned, latency {ping} ms, forced {f}", Id,
                 plr.Session.UnreliablePing, force.ToString());
@@ -851,9 +867,12 @@ namespace Santana
             GameRuleManager.MapInfo = GameServer.Instance.ResourceCache.GetMaps()[Options.MapId];
             GameRuleManager.GameRule = RoomManager.GameRuleFactory.Get(Options.GameRule, this);
         }
-        private Player GetPlayerWithLowestPing()
+        private Player GetPlayerWithLowestPing(Player exclude = null)
         {
-            return TeamManager.Players.OrderBy(x => x.Session?.UnreliablePing ?? double.MaxValue).FirstOrDefault() ?? null;
+            return TeamManager.Players
+                .Where(x => x != exclude)
+                .OrderBy(x => x.Session?.UnreliablePing ?? double.MaxValue)
+                .FirstOrDefault() ?? null;
         }
         private void TeamManager_TeamChanged(object sender, TeamChangedEventArgs e)
         {

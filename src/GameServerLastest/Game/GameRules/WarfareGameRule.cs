@@ -170,6 +170,15 @@ namespace Santana.Game.GameRules
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
                 (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
         }
+        public void RequestRoundReset()
+        {
+            if (!ScoreIsPlaying() || _queenDown)
+                return;
+            _queenDown = true;
+            _elapsedSinceQueenDown = TimeSpan.Zero;
+            Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
+                (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
+        }
         private bool CanStartGame()
         {
             if (!StateMachine.IsInState(GameRuleState.Waiting))

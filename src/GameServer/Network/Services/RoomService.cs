@@ -99,6 +99,8 @@ namespace Santana.Network.Services
                 gamer.SendAsync(new RoomChangeMasterAckMessage(gamer.Room.Master.Account.Id));
             if (!gamer.Room.ChangeHostIfNeeded(gamer))
                 gamer.SendAsync(new RoomChangeRefereeAckMessage(gamer.Room.Host.Account.Id));
+            if (gamer.Room.Host != null)
+                IpcService.NotifyWarfareReferee(gamer.Room.Host.Account.Id, (ushort)gamer.Room.Host.RoomInfo.PeerId.PeerId);
             gamer.Room.Broadcast(new RoomEnterPlayerForBookNameTagsAckMessage
             {
                 AccountId = gamer.Account.Id,
@@ -554,7 +556,8 @@ namespace Santana.Network.Services
                 case GameState.Playing:
                     gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Normal
                                  ? PlayerState.Alive : PlayerState.Spectating;
-
+                    gamer.Room.Broadcast(new RoomGameEndLoadingAckMessage(gamer.Account.Id));
+                    gamer.Room.ResendEnterPlayerInfo(gamer);
                     break;
             }
             if (gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Chaser && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Captain && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.BattleRoyal)
@@ -598,7 +601,7 @@ namespace Santana.Network.Services
             }
             foreach (var loaded in gamer.Room.Players.Where(x => x.Value.RoomInfo.HasLoaded))
             {
-               // gamer.SendAsync(new RoomGameEndLoadingAckMessage(loaded.Value.Account.Id));
+                gamer.SendAsync(new RoomGameEndLoadingAckMessage(loaded.Value.Account.Id));
                 if (gamer.Room.GameRuleManager.GameRule.GameRule == GameRule.Arcade)
                 {
                     gamer.SendAsync(new ArcadeSucceedLoadingAckMessage { AccountId = loaded.Value.Account.Id });
@@ -612,10 +615,11 @@ namespace Santana.Network.Services
             {
                 gamer.Room.GameRuleManager.GameRule.OnBeforeIntrudeSpawn(gamer);
                 session.SendAsync(new RoomGameStartAckMessage());
-                session.SendAsync(new GameChangeStateAckMessage(gamer.Room.GameState));
                 session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState,
                     gamer.Room.GameRuleManager.GameRule.IntrudeTimeState,
                     gamer.Room.GameRuleManager.GameRule.IntrudeRefreshTime));
+                if (gamer.Room.Host != null)
+                    gamer.Room.Broadcast(new RoomChangeRefereeAckMessage(gamer.Room.Host.Account.Id));
             }
             gamer.Room.GameRuleManager.GameRule.IntrudeCompleted(gamer);
         }

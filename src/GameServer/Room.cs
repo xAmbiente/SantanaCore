@@ -42,6 +42,7 @@ namespace Santana
         private TimeSpan _hostUpdateTime = TimeSpan.FromSeconds(30);
         private TimeSpan _voteKickTime = TimeSpan.FromSeconds(10);
         private ConcurrentDictionary<ulong, object> _kickedPlayers = new ConcurrentDictionary<ulong, object>();
+        private readonly ConcurrentDictionary<ulong, byte> _peerIdSeq = new ConcurrentDictionary<ulong, byte>();
         private ConcurrentDictionary<ulong, Player> _players = new ConcurrentDictionary<ulong, Player>();
         public ConcurrentDictionary<Player, Team> _blockplayers = new ConcurrentDictionary<Player, Team>();
         private Dictionary<Player, PlayerGameMode> _roomChangePlayers = new Dictionary<Player, PlayerGameMode>();
@@ -144,6 +145,11 @@ namespace Santana
                         ChangeMasterIfNeeded(GetPlayerWithLowestPing(), true);
                         ChangeHostIfNeeded(GetPlayerWithLowestPing(), true);
                     }
+                }
+                if (!(Host?.IsLoggedIn() ?? true) || Host?.Room != this)
+                {
+                    if (TeamManager.Players.Any())
+                        ChangeHostIfNeeded(GetPlayerWithLowestPing(), true);
                 }
                 if (!TeamManager.NoSpectatorPlayers.Any() && TeamManager.Players.Any())
                 {
@@ -250,7 +256,8 @@ namespace Santana
                          byte id = 3;
                          while (Players.Values.Any(p => p.RoomInfo.Slot == id))
                              id++;
-                         plr.RoomInfo.PeerId = new LongPeerId(plr.Account.Id, new PeerId(0, id, PlayerCategory.Player));
+                         var entry = _peerIdSeq.AddOrUpdate(plr.Account.Id, (byte)0, (_, prev) => (byte)(prev + 1));
+                         plr.RoomInfo.PeerId = new LongPeerId(plr.Account.Id, new PeerId(entry, id, PlayerCategory.Player));
                          plr.RoomInfo.Slot = id;
                      }
                      plr.RoomInfo.Reset();
@@ -393,6 +400,15 @@ namespace Santana
                 return;
             TeamManager.ChangeTeam(plr, clubBattleTeam.Value, true);
          }
+        public void ResendEnterPlayerInfo(Player plr)
+        {
+            var dto = GetRoomPlrDto(plr, true);
+            if (dto == null)
+                return;
+
+            BroadcastExcept(plr, new RoomEnterPlayerInfoAckMessage(dto));
+        }
+
         private static RoomEnterPlayerAckMessage CreateRoomEnterPlayerAck(Player plr)
         {
             return new RoomEnterPlayerAckMessage(
@@ -437,6 +453,15 @@ namespace Santana
                 if (plr == null || plr.Room == null || plr.Room != this || !_players.ContainsKey(plr.Account?.Id ?? 0))
                     return;
                 GameRuleManager?.GameRule?.OnPlayerLeaving(plr);
+                if (plr == Master || plr == Host)
+                {
+                    var successor = GetPlayerWithLowestPing(plr);
+                    if (successor != null)
+                    {
+                        ChangeMasterIfNeeded(successor, true);
+                        ChangeHostIfNeeded(successor, true);
+                    }
+                }
                 if (roomLeaveReason == RoomLeaveReason.Kicked ||
                roomLeaveReason == RoomLeaveReason.ModeratorKick ||
                roomLeaveReason == RoomLeaveReason.VoteKick)
@@ -449,6 +474,8 @@ namespace Santana
                 plr.RoomInfo.PeerId = 0;
                 plr.Room = null;
                 plr.RoomInfo.IsReady = false;
+                plr.RoomInfo.HasLoaded = false;
+                plr.RoomInfo.State = PlayerState.Lobby;
                 Network.Services.IpcService.NotifyPlayerLeftRoom(plr.Account.Id);
                 plr.SendAsync(new RoomLeavePlayerInfoAckMessage(plr.Account.Id));
                 plr.SendAsync(new ItemClearInvalidEquipItemAckMessage());
@@ -606,7 +633,7 @@ namespace Santana
                 return false;
             if (Master == null)
                 force = true;
-            if (plr == Master || (Master?.IsLoggedIn() ?? false) && !force || !plr.IsLoggedIn())
+            if (plr == Master || (Master?.IsLoggedIn() ?? false) && Master?.Room == this && !force || !plr.IsLoggedIn())
                 return false;
             Master = plr;
             if (Master.RoomInfo.IsReady)
@@ -625,12 +652,13 @@ namespace Santana
                 return false;
             if (Host == null)
                 force = true;
-            if (Host == plr || (Host?.IsLoggedIn() ?? false) && !force || !plr.IsLoggedIn())
+            if (Host == plr || (Host?.IsLoggedIn() ?? false) && Host?.Room == this && !force || !plr.IsLoggedIn())
                 return false;
             Logger.ForAccount(plr).Information("Room {roomId}: relay duty reassigned, latency {ping} ms, forced {f}", Id,
                 plr.Session.UnreliablePing, force.ToString());
             Host = plr;
             Broadcast(new RoomChangeRefereeAckMessage(Host.Account.Id));
+            Network.Services.IpcService.NotifyWarfareReferee(Host.Account.Id, (ushort)Host.RoomInfo.PeerId.PeerId);
             return true;
         }
         public void ChangeRules(ChangeRuleDto options)
@@ -851,9 +879,12 @@ namespace Santana
             GameRuleManager.MapInfo = GameServer.Instance.ResourceCache.GetMaps()[Options.MapId];
             GameRuleManager.GameRule = RoomManager.GameRuleFactory.Get(Options.GameRule, this);
         }
-        private Player GetPlayerWithLowestPing()
+        private Player GetPlayerWithLowestPing(Player exclude = null)
         {
-            return TeamManager.Players.OrderBy(x => x.Session?.UnreliablePing ?? double.MaxValue).FirstOrDefault() ?? null;
+            return TeamManager.Players
+                .Where(x => x != exclude)
+                .OrderBy(x => x.Session?.UnreliablePing ?? double.MaxValue)
+                .FirstOrDefault() ?? null;
         }
         private void TeamManager_TeamChanged(object sender, TeamChangedEventArgs e)
         {
@@ -1010,13 +1041,6 @@ namespace Santana
         {
             if (plr == null || plr.Room == null)
                 return;
-            if (GameRuleManager.GameRule.GameRule == GameRule.Warfare)
-            {
-                foreach (var ap in TeamManager.Players.OrderBy(p => (byte)p.RoomInfo.Team.Team).ThenBy(p => p.RoomInfo.Slot).ToList())
-                    Logger.Information("[WARFARE-BRIEF] to={to} isResult={r} plr={p} team={t} slot={s} Kills={k} Total={tot}",
-                        plr.Account.Nickname, isResult, ap.Account.Nickname, ap.RoomInfo.Team?.Team, ap.RoomInfo.Slot,
-                        ap.RoomInfo.Stats.Kills, ap.RoomInfo.Stats.TotalScore);
-            }
             var data = GameRuleManager.GameRule.Briefing.SerializeDataToArray(isResult);
             plr.SendAsync(new GameBriefingInfoAckMessage(isResult, false, data));
         }

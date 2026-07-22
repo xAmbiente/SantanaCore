@@ -159,14 +159,27 @@ namespace Santana.Game.GameRules
         {
             if (!ScoreIsPlaying())
                 return;
+            var killerPeerRaw = (ushort)(unk >> 48);
+            var killer = Room.Players.Values.FirstOrDefault(p =>
+                p.RoomInfo?.PeerId?.PeerId != null &&
+                (ushort)p.RoomInfo.PeerId.PeerId == killerPeerRaw) ?? plr;
             _queenDown = true;
-            plr.RoomInfo.Team.Score++;
-            GetRecord(plr).QueenKills++;
+            killer.RoomInfo.Team.Score++;
+            GetRecord(killer).QueenKills++;
             Room.Broadcast(new ScoreAIKillAckMessage(unk));
             var midMatch = TimeSpan.FromSeconds(Room.Options.TimeLimit.TotalSeconds / 2);
             var remainingToMid = midMatch - RoundTime;
             if (remainingToMid <= TimeSpan.FromSeconds(10))
                 return;
+            Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
+                (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
+        }
+        public void RequestRoundReset()
+        {
+            if (!ScoreIsPlaying() || _queenDown)
+                return;
+            _queenDown = true;
+            _elapsedSinceQueenDown = TimeSpan.Zero;
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
                 (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
         }

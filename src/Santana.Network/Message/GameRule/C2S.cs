@@ -208,9 +208,9 @@ namespace Santana.Network.Message.GameRule
     {
         public ArcadeStageFailedReqMessage()
         {
-            Scores = Array.Empty<ArcadeScoreSyncReqDto>();
+            Scores = Array.Empty<ArcadeScoreSyncDto>();
         }
-        public ArcadeScoreSyncReqDto[] Scores { get; set; }
+        public ArcadeScoreSyncDto[] Scores { get; set; }
     }
     [Packet(2031, PacketType.GameRule)]
     public class ArcadeStageInfoReqMessage

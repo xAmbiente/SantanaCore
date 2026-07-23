@@ -89,12 +89,13 @@ namespace Santana.Game.GameRules
                     StateMachine.IsInState(GameRuleState.Result) ||
                     RoundTime < TimeSpan.FromSeconds(5))
                     return;
-                var fewestActive = teams.Values.Min(team =>
-                    team.Keys.Count(member =>
-                        member.RoomInfo.State != PlayerState.Lobby &&
-                        member.RoomInfo.State != PlayerState.Spectating));
+                var fewestActive = teams.Values.Min(team => team.PlayersPlaying.Count());
                 if (fewestActive == 0 && !Room.Options.IsFriendly)
-                    StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                {
+                    if (StateMachine.CanFire(GameRuleStateTrigger.StartResult))
+                        StateMachine.Fire(GameRuleStateTrigger.StartResult);
+                    return;
+                }
                 var inFirstHalf = StateMachine.IsInState(GameRuleState.FirstHalf);
                 var inSecondHalf = StateMachine.IsInState(GameRuleState.SecondHalf);
                 if (inFirstHalf || inSecondHalf)
@@ -159,15 +160,27 @@ namespace Santana.Game.GameRules
         {
             if (!ScoreIsPlaying())
                 return;
+            var killerPeerRaw = (ushort)(unk >> 48);
+            var killer = Room.Players.Values.FirstOrDefault(p =>
+                p.RoomInfo?.PeerId?.PeerId != null &&
+                (ushort)p.RoomInfo.PeerId.PeerId == killerPeerRaw) ?? plr;
             _queenDown = true;
-            plr.RoomInfo.Team.Score++;
-            GetRecord(plr).QueenKills++;
-            GetRecord(plr).Kills++;
+            killer.RoomInfo.Team.Score++;
+            GetRecord(killer).QueenKills++;
             Room.Broadcast(new ScoreAIKillAckMessage(unk));
             var midMatch = TimeSpan.FromSeconds(Room.Options.TimeLimit.TotalSeconds / 2);
             var remainingToMid = midMatch - RoundTime;
             if (remainingToMid <= TimeSpan.FromSeconds(10))
                 return;
+            Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
+                (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
+        }
+        public void RequestRoundReset()
+        {
+            if (!ScoreIsPlaying() || _queenDown)
+                return;
+            _queenDown = true;
+            _elapsedSinceQueenDown = TimeSpan.Zero;
             Room.Broadcast(new GameEventMessageAckMessage(GameEventMessage.NextRoundIn,
                 (ulong)ResetRoundDelay.TotalMilliseconds, 0, 0, ""));
         }

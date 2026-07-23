@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Santana.Network")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("OldIDs_Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("2026.7.7.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a510573e9596a2bc80d888eb48f1cf16ca1fad1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+da0072c9ff025c8b498d9e5a79ff5eff26a1aa4e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Santana.Network")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Santana.Network")]
 [assembly: System.Reflection.AssemblyVersionAttribute("2026.7.7.0")]

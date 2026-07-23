@@ -32,10 +32,27 @@ namespace ProudNetSrc
         public static ushort PeerOf(uint hostId, ushort fallback) =>
             Peers.TryGetValue(hostId, out var p) ? p : fallback;
 
+        private static readonly ConcurrentDictionary<uint, uint> Accounts =
+            new ConcurrentDictionary<uint, uint>();
+
+        public static void ObserveAccount(uint hostId, uint accountId) => Accounts[hostId] = accountId;
+
+        public static uint AccountOf(uint hostId) =>
+            Accounts.TryGetValue(hostId, out var a) ? a : 0;
+
+        private static readonly ConcurrentDictionary<ulong, ushort> RefereePeer =
+            new ConcurrentDictionary<ulong, ushort>();
+
+        public static void SetRefereePeer(ulong accountId, ushort peerId) => RefereePeer[accountId] = peerId;
+
+        public static ushort RefereePeerOf(uint accountId) =>
+            RefereePeer.TryGetValue(accountId, out var p) ? p : (ushort)0;
+
         // Los HostId se reasignan al reconectar; sin esto devolvemos el peer del inquilino anterior.
         public static void Forget(uint hostId)
         {
             Peers.TryRemove(hostId, out _);
+            Accounts.TryRemove(hostId, out _);
             foreach (var key in Last.Keys)
             {
                 if (key.From == hostId || key.To == hostId)

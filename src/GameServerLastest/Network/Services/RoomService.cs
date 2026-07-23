@@ -555,12 +555,15 @@ namespace Santana.Network.Services
                     gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Normal
                                  ? PlayerState.Alive : PlayerState.Spectating;
 
+                    if (gamer.Room.GameRuleManager.GameRule.GameRule == GameRule.Warfare)
+                        gamer.SendAsync(new GameEventMessageAckMessage(GameEventMessage.ResetRound, 0, 0, 0, ""));
+
                     break;
             }
             if (gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Chaser && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Captain && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.BattleRoyal)
             {
-                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
-                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
+                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
+                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
                 var alphaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Alpha);
                 var betaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Beta);
                 if ((alphaActive.Count() - alphaBenched.Count()) > betaActive.Count())
@@ -614,6 +617,8 @@ namespace Santana.Network.Services
                 session.SendAsync(new RoomGameStartAckMessage());
                 session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState, gamer.Room.SubGameState,
                     gamer.Room.RoundTime));
+                if (gamer.Room.Host != null)
+                    gamer.Room.Broadcast(new RoomChangeRefereeAckMessage(gamer.Room.Host.Account.Id));
             }
             gamer.Room.GameRuleManager.GameRule.IntrudeCompleted(gamer);
         }

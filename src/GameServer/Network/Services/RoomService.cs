@@ -99,6 +99,8 @@ namespace Santana.Network.Services
                 gamer.SendAsync(new RoomChangeMasterAckMessage(gamer.Room.Master.Account.Id));
             if (!gamer.Room.ChangeHostIfNeeded(gamer))
                 gamer.SendAsync(new RoomChangeRefereeAckMessage(gamer.Room.Host.Account.Id));
+            if (gamer.Room.Host != null)
+                IpcService.NotifyWarfareReferee(gamer.Room.Host.Account.Id, (ushort)gamer.Room.Host.RoomInfo.PeerId.PeerId);
             gamer.Room.Broadcast(new RoomEnterPlayerForBookNameTagsAckMessage
             {
                 AccountId = gamer.Account.Id,
@@ -554,13 +556,15 @@ namespace Santana.Network.Services
                 case GameState.Playing:
                     gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Normal
                                  ? PlayerState.Alive : PlayerState.Spectating;
-
+                    if (gamer.Room.GameRuleManager.GameRule.GameRule != GameRule.Captain)
+                        gamer.Room.Broadcast(new RoomGameEndLoadingAckMessage(gamer.Account.Id));
+                    gamer.Room.ResendEnterPlayerInfo(gamer);
                     break;
             }
             if (gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Chaser && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.Captain && gamer.Room?.GameRuleManager.GameRule.GameRule != GameRule.BattleRoyal)
             {
-                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
-                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
+                var alphaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Alpha && x.RoomInfo.State != PlayerState.Lobby);
+                var betaActive = gamer.Room.Players.Values.Where(x => x.RoomInfo.Team?.Team == Team.Beta && x.RoomInfo.State != PlayerState.Lobby);
                 var alphaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Alpha);
                 var betaBenched = gamer.Room._blockplayers.Where(x => x.Value == Team.Beta);
                 if ((alphaActive.Count() - alphaBenched.Count()) > betaActive.Count())
@@ -598,7 +602,7 @@ namespace Santana.Network.Services
             }
             foreach (var loaded in gamer.Room.Players.Where(x => x.Value.RoomInfo.HasLoaded))
             {
-               // gamer.SendAsync(new RoomGameEndLoadingAckMessage(loaded.Value.Account.Id));
+                gamer.SendAsync(new RoomGameEndLoadingAckMessage(loaded.Value.Account.Id));
                 if (gamer.Room.GameRuleManager.GameRule.GameRule == GameRule.Arcade)
                 {
                     gamer.SendAsync(new ArcadeSucceedLoadingAckMessage { AccountId = loaded.Value.Account.Id });
@@ -612,10 +616,11 @@ namespace Santana.Network.Services
             {
                 gamer.Room.GameRuleManager.GameRule.OnBeforeIntrudeSpawn(gamer);
                 session.SendAsync(new RoomGameStartAckMessage());
-                session.SendAsync(new GameChangeStateAckMessage(gamer.Room.GameState));
                 session.SendAsync(new GameRefreshGameRuleInfoAckMessage(gamer.Room.GameState,
                     gamer.Room.GameRuleManager.GameRule.IntrudeTimeState,
                     gamer.Room.GameRuleManager.GameRule.IntrudeRefreshTime));
+                if (gamer.Room.Host != null)
+                    gamer.Room.Broadcast(new RoomChangeRefereeAckMessage(gamer.Room.Host.Account.Id));
             }
             gamer.Room.GameRuleManager.GameRule.IntrudeCompleted(gamer);
         }
@@ -685,7 +690,12 @@ namespace Santana.Network.Services
                 ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).ArcadeStageClear(message.Scores);
             }
             else
-                gamer.Room.GameRuleManager.GameRule.StateMachine.Fire(GameRuleStateTrigger.StartResult);
+            {
+                Serilog.Log.Information("[CONQUEST] ArcadeStageClear scores={N}", message.Scores?.Length ?? 0);
+                foreach (var s in message.Scores ?? System.Array.Empty<ArcadeScoreSyncDto>())
+                    Serilog.Log.Information("[CONQUEST]   clear acc={Acc} monsterCount={M} max={Mx} killed={K}", s.AccountId, s.MonsterCount, s.MaxMonster, s.KilledMonster);
+                ((ConquestGameRule)gameRoom.GameRuleManager.GameRule).OnConquestScore(gamer, message.Scores);
+            }
         }
         [MessageHandler(typeof(ArcadeBeginRoundReqMessage))]
         public void ArcadeBeginRoundReq(GameSession session, ArcadeBeginRoundReqMessage message)
@@ -754,10 +764,13 @@ namespace Santana.Network.Services
         public void ArcadeScoreSyncReqMessage(GameSession session, ArcadeScoreSyncReqMessage message)
         {
             var gamer = session.Player;
-            if (gamer?.Room == null || gamer.Room.GameRuleManager.GameRule.GameRule != GameRule.Arcade)
+            if (gamer?.Room == null)
                 return;
             var gameRoom = gamer.Room;
-            ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).OnArcadeScore(gamer, message.Scores);
+            if (gameRoom.GameRuleManager.GameRule.GameRule == GameRule.Arcade)
+                ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).OnArcadeScore(gamer, message.Scores);
+            else if (gameRoom.GameRuleManager.GameRule.GameRule == GameRule.Horde)
+                ((ConquestGameRule)gameRoom.GameRuleManager.GameRule).OnConquestScore(gamer, message.Scores);
         }
         [MessageHandler(typeof(GameEventMessageReqMessage))]
         public void CEventMessageReq(GameSession session, GameEventMessageReqMessage message)
@@ -1220,7 +1233,12 @@ namespace Santana.Network.Services
             if (gamer.Room == null || !gamer.Room.HasStarted)
                 return;
             var gameRoom = gamer.Room;
-            ((WarfareGameRule)gameRoom.GameRuleManager.GameRule).OnScoreAIKill(gamer, message.Unk[0]);
+            if (message.Unk == null || message.Unk.Length == 0)
+                return;
+            if (gameRoom.GameRuleManager.GameRule is WarfareGameRule warfare)
+                warfare.OnScoreAIKill(gamer, message.Unk[0]);
+            else if (gameRoom.GameRuleManager.GameRule is ConquestGameRule conquest)
+                conquest.OnMonsterKill(gamer);
         }
         [MessageHandler(typeof(ScoreKillReqMessage))]
         public void CScoreKillReq(GameSession session, ScoreKillReqMessage message)

@@ -71,5 +71,13 @@ namespace Santana.Network.Services
 
             Santana.Ipc.Ipc.Bus.PublishAsync(new PlayerDisconnectedMessage(accountId));
         }
+
+        public static void NotifyWarfareReferee(ulong accountId, ushort peerId)
+        {
+            if (!Santana.Ipc.Ipc.IsEnabled)
+                return;
+
+            Santana.Ipc.Ipc.Bus.PublishAsync(new WarfareRefereeMessage(accountId, peerId));
+        }
     }
 }

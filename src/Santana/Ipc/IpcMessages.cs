@@ -68,6 +68,15 @@ namespace Santana.Ipc
         public RelayServerNotifyP2PMessage(uint roomId) { RoomId = roomId; }
     }
 
+    public class WarfareRefereeMessage
+    {
+        public ulong AccountId { get; set; }
+        public ushort PeerId { get; set; }
+
+        public WarfareRefereeMessage() { }
+        public WarfareRefereeMessage(ulong accountId, ushort peerId) { AccountId = accountId; PeerId = peerId; }
+    }
+
     public class RelayKillPlayerMessage
     {
         public ulong TargetAccountId { get; set; }

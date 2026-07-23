@@ -121,6 +121,7 @@ namespace Santana.Relay
             var plr = new RelayPlayer(session, answer.Account);
             session.Player = plr;
             RelayHost.Players.Add(plr);
+            ProudNetSrc.RelayFrameTracker.ObserveAccount(session.HostId, (uint)answer.Account.Id);
 
             RelayHost.Rooms.GetOrCreate(message.RoomLocation.RoomId).Join(plr);
 
@@ -144,6 +145,13 @@ namespace Santana.Relay
             await Ipc.Ipc.Bus.SubscribeAsync<PlayerDisconnectedMessage>(OnPlayerDisconnected, _shutdown.Token);
             await Ipc.Ipc.Bus.SubscribeAsync<PlayerLeftRoomMessage>(OnPlayerLeftRoom, _shutdown.Token);
             await Ipc.Ipc.Bus.SubscribeAsync<RelayKillPlayerMessage>(OnKillPlayer, _shutdown.Token);
+            await Ipc.Ipc.Bus.SubscribeAsync<WarfareRefereeMessage>(OnWarfareReferee, _shutdown.Token);
+        }
+
+        private static Task OnWarfareReferee(WarfareRefereeMessage message)
+        {
+            ProudNetSrc.RelayFrameTracker.SetRefereePeer(message.AccountId, message.PeerId);
+            return Task.CompletedTask;
         }
 
         // Bloque de dano P2P capturado de un golpe real (sub-mensaje DamageInfo, subOp 0x05, 76 bytes).

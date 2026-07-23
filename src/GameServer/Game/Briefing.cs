@@ -63,7 +63,10 @@ namespace Santana.Game
 
         protected virtual void Serialize(BinaryWriter w, bool isResult)
         {
-            var activePlayers = GameRule.Room.TeamManager.Players.ToArray();
+            var activePlayers = GameRule.Room.TeamManager.Players
+                .OrderBy(p => (byte)p.RoomInfo.Team.Team)
+                .ThenBy(p => p.RoomInfo.Slot)
+                .ToArray();
             var watchers = GameRule.Room.TeamManager.Spectators.ToArray();
 
             w.Write((int)GetWinnerTeam().Team);
@@ -72,7 +75,7 @@ namespace Santana.Game
             w.Write(activePlayers.Length);
             w.Write(watchers.Length);
 
-            foreach (var team in GameRule.Room.TeamManager.Values)
+            foreach (var team in GameRule.Room.TeamManager.Values.OrderBy(t => (byte)t.Team))
                 SerializeTeam(team, w);
 
             foreach (var participant in activePlayers)

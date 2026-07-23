@@ -617,7 +617,20 @@ namespace Santana.Network.Services
                 {
                 }
                 plr?.SendAsync(new PlayeArcadeMapInfoAckMessage());
-                plr?.SendAsync(new PlayerArcadeStageInfoAckMessage());
+                plr?.SendAsync(new PlayerArcadeStageInfoAckMessage
+                {
+                    Infos = new[]
+                    {
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 1, Unk2 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 2, Unk3 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 3, Unk4 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 4, Unk5 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 5, Unk6 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 6, Unk7 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 7, Unk8 = 1 },
+                        new Santana.Network.Data.Game.ArcadeStageInfoDto { Unk1 = 8, Unk9 = 1 },
+                    }
+                });
                 ShopService.RefreshCollectBookRuntimeState(plr);
                 plr.CharacterManager.Boosts.PlayerNameTag();
                 plr?.SendAsync(new ClubMyInfoAckMessage(plr.Map<Player, ClubMyInfoDto>()));

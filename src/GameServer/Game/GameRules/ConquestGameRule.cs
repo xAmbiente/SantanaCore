@@ -95,6 +95,32 @@ namespace Santana.Game.GameRules
     {
       return true;
     }
+
+    public void OnConquestScore(Player plr, ArcadeScoreSyncDto[] score)
+    {
+      var own = score.FirstOrDefault(x => x.AccountId == plr.Account.Id);
+      if (own == null)
+        return;
+      Serilog.Log.Information("[CONQUEST] OnConquestScore acc={Acc} monsterCount={M} max={Mx} killed={K}", plr.Account.Id, own.MonsterCount, own.MaxMonster, own.KilledMonster);
+      if ((uint)own.KilledMonster > GetRecord(plr).KilledMonster)
+        GetRecord(plr).KilledMonster = (uint)own.KilledMonster;
+    }
+
+    public void OnMonsterKill(Player plr)
+    {
+      GetRecord(plr).KilledMonster++;
+      Serilog.Log.Information("[CONQUEST] OnMonsterKill acc={Acc} total={K}", plr.Account.Id, GetRecord(plr).KilledMonster);
+    }
+
+    public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute,
+        LongPeerId scoreTarget, LongPeerId scoreKiller, LongPeerId scoreAssist)
+    {
+      base.OnScoreKill(killer, assist, target, attackAttribute, scoreTarget, scoreKiller, scoreAssist);
+      if (killer == null || scoreTarget.PeerId.Category == PlayerCategory.Player)
+        return;
+      GetRecord(killer).KilledMonster++;
+      Serilog.Log.Information("[CONQUEST] monster kill acc={Acc} total={K} cat={Cat}", killer.Account.Id, GetRecord(killer).KilledMonster, scoreTarget.PeerId.Category);
+    }
   }
 
   internal class ConquestBriefing : Briefing
@@ -117,29 +143,35 @@ namespace Santana.Game.GameRules
     {
     }
 
-    public override uint TotalScore => GetTotalScore();
+    public override uint TotalScore => KilledMonster;
+    public uint KilledMonster { get; set; }
 
     public override void Serialize(BinaryWriter w, bool isResult)
     {
       base.Serialize(w, isResult);
+      w.Write(KilledMonster);
       w.Write(0);
       w.Write(0);
       w.Write(0);
       w.Write(0);
       w.Write(0);
       w.Write(0);
-      w.Write(0);
-    }
-
-    private uint GetTotalScore()
-    {
-      return 0;
     }
 
     public override int GetExpGain(out int bonusExp)
     {
-      bonusExp = 0;
-      return 0;
+      base.GetExpGain(out bonusExp);
+
+      var expRates = Config.Instance.Game.BRExpRates;
+
+      var contenders = Player.Room.TeamManager.Players
+          .Where(plr => plr.RoomInfo.State == PlayerState.Waiting &&
+                        plr.RoomInfo.Mode == PlayerGameMode.Normal)
+          .ToArray();
+
+      return (int)(TotalScore * expRates.ScoreFactor +
+                    contenders.Length * expRates.PlayerCountFactor +
+                    Player.RoomInfo.PlayTime.TotalMinutes * expRates.ExpPerMin);
     }
   }
 }

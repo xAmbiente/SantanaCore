@@ -690,7 +690,12 @@ namespace Santana.Network.Services
                 ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).ArcadeStageClear(message.Scores);
             }
             else
-                gamer.Room.GameRuleManager.GameRule.StateMachine.Fire(GameRuleStateTrigger.StartResult);
+            {
+                Serilog.Log.Information("[CONQUEST] ArcadeStageClear scores={N}", message.Scores?.Length ?? 0);
+                foreach (var s in message.Scores ?? System.Array.Empty<ArcadeScoreSyncDto>())
+                    Serilog.Log.Information("[CONQUEST]   clear acc={Acc} monsterCount={M} max={Mx} killed={K}", s.AccountId, s.MonsterCount, s.MaxMonster, s.KilledMonster);
+                ((ConquestGameRule)gameRoom.GameRuleManager.GameRule).OnConquestScore(gamer, message.Scores);
+            }
         }
         [MessageHandler(typeof(ArcadeBeginRoundReqMessage))]
         public void ArcadeBeginRoundReq(GameSession session, ArcadeBeginRoundReqMessage message)
@@ -759,10 +764,13 @@ namespace Santana.Network.Services
         public void ArcadeScoreSyncReqMessage(GameSession session, ArcadeScoreSyncReqMessage message)
         {
             var gamer = session.Player;
-            if (gamer?.Room == null || gamer.Room.GameRuleManager.GameRule.GameRule != GameRule.Arcade)
+            if (gamer?.Room == null)
                 return;
             var gameRoom = gamer.Room;
-            ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).OnArcadeScore(gamer, message.Scores);
+            if (gameRoom.GameRuleManager.GameRule.GameRule == GameRule.Arcade)
+                ((ArcadeGameRule)gameRoom.GameRuleManager.GameRule).OnArcadeScore(gamer, message.Scores);
+            else if (gameRoom.GameRuleManager.GameRule.GameRule == GameRule.Horde)
+                ((ConquestGameRule)gameRoom.GameRuleManager.GameRule).OnConquestScore(gamer, message.Scores);
         }
         [MessageHandler(typeof(GameEventMessageReqMessage))]
         public void CEventMessageReq(GameSession session, GameEventMessageReqMessage message)
@@ -1225,7 +1233,12 @@ namespace Santana.Network.Services
             if (gamer.Room == null || !gamer.Room.HasStarted)
                 return;
             var gameRoom = gamer.Room;
-            ((WarfareGameRule)gameRoom.GameRuleManager.GameRule).OnScoreAIKill(gamer, message.Unk[0]);
+            if (message.Unk == null || message.Unk.Length == 0)
+                return;
+            if (gameRoom.GameRuleManager.GameRule is WarfareGameRule warfare)
+                warfare.OnScoreAIKill(gamer, message.Unk[0]);
+            else if (gameRoom.GameRuleManager.GameRule is ConquestGameRule conquest)
+                conquest.OnMonsterKill(gamer);
         }
         [MessageHandler(typeof(ScoreKillReqMessage))]
         public void CScoreKillReq(GameSession session, ScoreKillReqMessage message)

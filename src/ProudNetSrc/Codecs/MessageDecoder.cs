@@ -30,6 +30,9 @@ namespace ProudNetSrc.Codecs
         if (buffer.ReadableBytes < 2)
           return;
 
+        var _start = buffer.ReaderIndex;
+        var _len = buffer.ReadableBytes;
+
         using (var r = new ReadOnlyByteBufferStream(buffer, false).ToBinaryReader(false))
         {
           var opCode = r.ReadUInt16();
@@ -47,7 +50,17 @@ namespace ProudNetSrc.Codecs
 #endif
           }
 
-          message.Message = factory.GetMessage(opCode, r);
+          try
+          {
+            message.Message = factory.GetMessage(opCode, r);
+          }
+          catch (System.Exception ex)
+          {
+            var _snap = new byte[_len];
+            buffer.GetBytes(_start, _snap);
+            Serilog.Log.Warning("[DECODE-FAIL] op={Op} len={Len} bytes={Hex} err={Err}", opCode, _len, System.BitConverter.ToString(_snap), ex.Message);
+            throw;
+          }
           if (PacketLog.Enabled && opCode != 11 && opCode != 64019 && opCode != 64001)
             System.Console.WriteLine($"<< inbound rmi #{opCode} decoded as {message.Message.GetType().Name}");
           output.Add(message);

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SantanaLib.DotNetty")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+58e6cd9cb29ae895ea9ffa951b96997ee48b9162")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cd4e62528c87ea8e2f26874c8adae75c4218745f")]
 [assembly: System.Reflection.AssemblyProductAttribute("SantanaLib.DotNetty")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SantanaLib.DotNetty")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

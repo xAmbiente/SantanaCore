@@ -353,17 +353,15 @@ namespace Santana.Game.GameRules
                     if (slayerTeam != null)
                     {
                         GetRecord(killer).CaptainKills++;
+                        if (GetRecord(killer).Kills > 0)
+                            GetRecord(killer).Kills--;
                         if (assist != null)
+                        {
                             GetRecord(assist).CaptainKillAssists++;
+                            if (GetRecord(assist).KillAssists > 0)
+                                GetRecord(assist).KillAssists--;
+                        }
                     }
-
-                    GetRecord(target).Deaths++;
-                }
-                else if (victimTeam != null)
-                {
-                    GetRecord(killer).Kills++;
-                    if (assist != null)
-                        GetRecord(assist).KillAssists++;
                 }
             }
         }

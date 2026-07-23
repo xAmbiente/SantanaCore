@@ -556,7 +556,8 @@ namespace Santana.Network.Services
                 case GameState.Playing:
                     gamer.RoomInfo.State = gamer.RoomInfo.Mode == PlayerGameMode.Normal
                                  ? PlayerState.Alive : PlayerState.Spectating;
-                    gamer.Room.Broadcast(new RoomGameEndLoadingAckMessage(gamer.Account.Id));
+                    if (gamer.Room.GameRuleManager.GameRule.GameRule != GameRule.Captain)
+                        gamer.Room.Broadcast(new RoomGameEndLoadingAckMessage(gamer.Account.Id));
                     gamer.Room.ResendEnterPlayerInfo(gamer);
                     break;
             }
